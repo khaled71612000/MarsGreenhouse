@@ -29,25 +29,25 @@ public:
 
 	FString GetCameraLabel() const;
 
-	// --- camera bank access (HUD monitor; cameras switch by CLICK only now) ---
+	// --- camera bank (HUD monitor; switch by click) ---
 	int32 NumCameras() const { return Cameras.Num(); }
 	AGreenhouseCamera* GetCameraAt(int32 Index) const { return Cameras.IsValidIndex(Index) ? Cameras[Index] : nullptr; }
 	int32 CurrentCameraIndex() const { return CamIndex; }
 	void SelectCamera(int32 Index);
 
-	// --- single entry point for EVERY clickable HUD element (see NotifyHitBoxClick) ---
+	// --- ONE entry point for every clickable HUD / world element ---
 	void HandleHudAction(FName Action);
 
-	// Called by a world bed actor when the player clicks it (Sage-room interaction).
+	// Called by a world planter/LED actor when clicked.
 	void SelectBedFromWorld(int32 BedIndex);
 
-	// --- guided first-sol tutorial (skippable) ---
-	bool    TutorialActive() const   { return !bTutorialDone; }
-	int32   TutorialStepIndex() const{ return TutorialStep; }
-	FString TutorialPrompt() const;                 // text for the current step
-	bool    TutorialWantsNext() const{ return TutorialStep <= 1; } // steps advanced by a Next button
-	void    TutorialNext();                         // advance an intro step
-	void    TutorialSkip()           { bTutorialDone = true; }
+	// --- guided tutorial (skippable) ---
+	bool    TutorialActive() const    { return !bTutorialDone; }
+	int32   TutorialStepIndex() const { return TutorialStep; }
+	FString TutorialPrompt() const;
+	bool    TutorialWantsNext() const { return TutorialStep <= 1; }
+	void    TutorialNext();
+	void    TutorialSkip()            { bTutorialDone = true; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -90,24 +90,17 @@ private:
 	UFUNCTION() void HandleFail(EResource Cause);
 	UFUNCTION() void HandleWin();
 
-	// keyboard accelerators (optional; the HUD is fully clickable). Camera keys removed.
-	void KeyPause();
+	// keyboard accelerators (optional; the HUD + world are fully clickable)
 	void KeyAdvanceDay();
 	void KeyRestart();
 	void KeyNextBed();
-	void KeyWash();
 	void KeyPlantPotato();
 	void KeyPlantLettuce();
-	void KeyPlantAlgae();
-	void KeyPlantLegume();
-	void KeyOrderNitrogen();
+	void KeyWater();
+	void KeyHarvest();
 	void KeyMineIce();
 	void KeyElectrolyze();
-	void KeyHarvestN2();
-	void KeyCycleLight();
-	void KeyCycleWater();
-	void KeyCycleHeat();
-	void KeyCycleNutrient();
+	void KeyCycleLed();
 	void KeyChoiceA();
 	void KeyChoiceB();
 };
