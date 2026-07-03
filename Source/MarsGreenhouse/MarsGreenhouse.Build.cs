@@ -20,7 +20,9 @@ public class MarsGreenhouse : ModuleRules
 			"GameplayStateTreeModule",
 			"Niagara",
 			"UMG",
-			"Slate"
+			"Slate",
+			"SlateCore",           // added: for UMG widgets
+			"DeveloperSettings"    // added: for UMarsSimSettings (Project Settings page)
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
@@ -34,13 +36,5 @@ public class MarsGreenhouse : ModuleRules
 			"MarsGreenhouse/Variant_TwinStick/Gameplay",
 			"MarsGreenhouse/Variant_TwinStick/UI"
 		});
-
-		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-
-		// Uncomment if you are using online features
-		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
-
-		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
 	}
 }

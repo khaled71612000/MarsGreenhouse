@@ -7,20 +7,16 @@
 #include "MarsGreenhouseGameMode.generated.h"
 
 /**
- *  Simple Game Mode for a top-down perspective game
- *  Sets the default gameplay framework classes
- *  Check the Blueprint derived class for the set values
+ *  Mars Greenhouse game mode.
+ *  Concrete (not abstract) and self-wiring: it sets the PlayerController, a simple
+ *  fly-cam pawn, and the on-screen HUD in C++, so no Blueprint GameMode is needed.
+ *  Point GlobalDefaultGameMode (or the level's World Settings) at this class.
  */
-UCLASS(abstract)
+UCLASS()
 class AMarsGreenhouseGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
 public:
-
-	/** Constructor */
 	AMarsGreenhouseGameMode();
 };
-
-
-

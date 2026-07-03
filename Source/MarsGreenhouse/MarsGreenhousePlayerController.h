@@ -3,83 +3,111 @@
 #pragma once
 
 #include "CoreMinimal.h"
-//#include "Templates/SubclassOf.h"
 #include "GameFramework/PlayerController.h"
+#include "MarsSimTypes.h"
 #include "MarsGreenhousePlayerController.generated.h"
 
-class UNiagaraSystem;
-class UInputMappingContext;
-class UInputAction;
-class UPathFollowingComponent;
+class UGreenhouseSimSubsystem;
+class UUserWidget;
+class UEventPopupWidget;
+class AGreenhouseCamera;
+class USoundBase;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
-
-/**
- *  Player controller for a top-down perspective game.
- *  Implements point and click based controls
- */
-UCLASS(abstract)
+UCLASS()
 class AMarsGreenhousePlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
-protected:
-
-	/** Component used for moving along a NavMesh path. */
-	UPROPERTY(VisibleDefaultsOnly, Category = AI)
-	TObjectPtr<UPathFollowingComponent> PathFollowingComponent;
-
-	/** Time Threshold to know if it was a short press */
-	UPROPERTY(EditAnywhere, Category="Input")
-	float ShortPressThreshold;
-
-	/** FX Class that we will spawn when clicking */
-	UPROPERTY(EditAnywhere, Category="Input")
-	TObjectPtr<UNiagaraSystem> FXCursor;
-
-	/** MappingContext */
-	UPROPERTY(EditAnywhere, Category="Input")
-	TObjectPtr<UInputMappingContext> DefaultMappingContext;
-	
-	/** Jump Input Action */
-	UPROPERTY(EditAnywhere, Category="Input")
-	TObjectPtr<UInputAction> SetDestinationClickAction;
-
-	/** Jump Input Action */
-	UPROPERTY(EditAnywhere, Category="Input")
-	TObjectPtr<UInputAction> SetDestinationTouchAction;
-
-	/** True if the controlled character should navigate to the mouse cursor. */
-	uint32 bMoveToMouseCursor : 1;
-
-	/** Set to true if we're using touch input */
-	uint32 bIsTouch : 1;
-
-	/** Saved location of the character movement destination */
-	FVector CachedDestination;
-
-	/** Time that the click input has been pressed */
-	float FollowTime = 0.0f;
-
 public:
-
-	/** Constructor */
 	AMarsGreenhousePlayerController();
 
+	UPROPERTY(BlueprintReadOnly, Category="Sim")
+	int32 SelectedBed = 0;
+
+	bool HasCustomDashboard() const { return DashboardWidget != nullptr; }
+	bool HasCustomEventUI() const;
+
+	FString GetCameraLabel() const;
+
+	// --- camera bank access (HUD monitor; cameras switch by CLICK only now) ---
+	int32 NumCameras() const { return Cameras.Num(); }
+	AGreenhouseCamera* GetCameraAt(int32 Index) const { return Cameras.IsValidIndex(Index) ? Cameras[Index] : nullptr; }
+	int32 CurrentCameraIndex() const { return CamIndex; }
+	void SelectCamera(int32 Index);
+
+	// --- single entry point for EVERY clickable HUD element (see NotifyHitBoxClick) ---
+	void HandleHudAction(FName Action);
+
+	// Called by a world bed actor when the player clicks it (Sage-room interaction).
+	void SelectBedFromWorld(int32 BedIndex);
+
+	// --- guided first-sol tutorial (skippable) ---
+	bool    TutorialActive() const   { return !bTutorialDone; }
+	int32   TutorialStepIndex() const{ return TutorialStep; }
+	FString TutorialPrompt() const;                 // text for the current step
+	bool    TutorialWantsNext() const{ return TutorialStep <= 1; } // steps advanced by a Next button
+	void    TutorialNext();                         // advance an intro step
+	void    TutorialSkip()           { bTutorialDone = true; }
+
 protected:
-
-	/** Initialize input bindings */
+	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
-	
-	/** Input handlers */
-	void OnInputStarted();
-	void OnSetDestinationTriggered();
-	void OnSetDestinationReleased();
-	void OnTouchTriggered();
-	void OnTouchReleased();
+	virtual void PlayerTick(float DeltaTime) override;
 
-	/** Helper function to get the move destination */
-	void UpdateCachedDestination();
+private:
+	UPROPERTY() TObjectPtr<UUserWidget> DashboardWidget;
+
+	// cameras
+	UPROPERTY() TArray<TObjectPtr<AGreenhouseCamera>> Cameras;
+	int32 CamIndex = 0;
+	int32 PendingCam = 0;
+	FTimerHandle CamFadeTimer;
+	FTimerHandle DayFadeTimer;
+	FRotator CamBaseRot = FRotator::ZeroRotator;
+	FRotator CamPanOffset = FRotator::ZeroRotator;
+
+	// tutorial
+	int32 TutorialStep  = 0;
+	bool  bTutorialDone = false;
+	void  TutorialTryAdvance(FName Action);
+
+	// cached audio
+	UPROPERTY() TObjectPtr<USoundBase> SfxClick;
+	UPROPERTY() TObjectPtr<USoundBase> SfxConfirm;
+	UPROPERTY() TObjectPtr<USoundBase> SfxAlert;
+	UPROPERTY() TObjectPtr<USoundBase> SfxTransition;
+
+	UGreenhouseSimSubsystem* GetSim() const;
+	void PlaySfx(USoundBase* Sound) const;
+	void SwitchCamera(int32 Index);
+	void FinishCameraSwitch();
+	void DayFadeDip();
+	void FinishDayFade();
+
+	UFUNCTION() void HandleEventTriggered(FEventCard Card);
+	UFUNCTION() void HandleNewSol(int32 Sol);
+	UFUNCTION() void HandleHarvest(int32 BedIndex);
+	UFUNCTION() void HandleFail(EResource Cause);
+	UFUNCTION() void HandleWin();
+
+	// keyboard accelerators (optional; the HUD is fully clickable). Camera keys removed.
+	void KeyPause();
+	void KeyAdvanceDay();
+	void KeyRestart();
+	void KeyNextBed();
+	void KeyWash();
+	void KeyPlantPotato();
+	void KeyPlantLettuce();
+	void KeyPlantAlgae();
+	void KeyPlantLegume();
+	void KeyOrderNitrogen();
+	void KeyMineIce();
+	void KeyElectrolyze();
+	void KeyHarvestN2();
+	void KeyCycleLight();
+	void KeyCycleWater();
+	void KeyCycleHeat();
+	void KeyCycleNutrient();
+	void KeyChoiceA();
+	void KeyChoiceB();
 };
-
-
