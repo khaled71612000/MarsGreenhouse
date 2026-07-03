@@ -24,7 +24,6 @@ protected:
 	UPROPERTY(meta=(BindWidgetOptional)) TObjectPtr<UProgressBar> OxygenBar;
 	UPROPERTY(meta=(BindWidgetOptional)) TObjectPtr<UProgressBar> WaterBar;
 	UPROPERTY(meta=(BindWidgetOptional)) TObjectPtr<UProgressBar> FoodBar;
-	UPROPERTY(meta=(BindWidgetOptional)) TObjectPtr<UProgressBar> NitrogenBar;
 	UPROPERTY(meta=(BindWidgetOptional)) TObjectPtr<UProgressBar> PowerBar;
 	UPROPERTY(meta=(BindWidgetOptional)) TObjectPtr<UTextBlock>   SolText;
 	UPROPERTY(meta=(BindWidgetOptional)) TObjectPtr<UTextBlock>   StateText;

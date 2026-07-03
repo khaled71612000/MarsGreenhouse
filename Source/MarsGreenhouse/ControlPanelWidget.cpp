@@ -16,11 +16,10 @@ void UControlPanelWidget::NativeTick(const FGeometry& Geo, float DeltaTime)
 	Super::NativeTick(Geo, DeltaTime);
 	if (!Sim) return;
 
-	if (OxygenBar)   OxygenBar->SetPercent(Sim->Oxygen     * 0.01f);
-	if (WaterBar)    WaterBar->SetPercent(Sim->Water       * 0.01f);
-	if (FoodBar)     FoodBar->SetPercent(Sim->Food         * 0.01f);
-	if (NitrogenBar) NitrogenBar->SetPercent(Sim->Nitrogen * 0.01f);
-	if (PowerBar)    PowerBar->SetPercent(Sim->Power        * 0.01f);
+	if (OxygenBar) OxygenBar->SetPercent(Sim->Oxygen * 0.01f);
+	if (WaterBar)  WaterBar->SetPercent(Sim->Water   * 0.01f);
+	if (FoodBar)   FoodBar->SetPercent(Sim->Food     * 0.01f);
+	if (PowerBar)  PowerBar->SetPercent(Sim->Power    * 0.01f);
 
 	if (SolText)
 	{

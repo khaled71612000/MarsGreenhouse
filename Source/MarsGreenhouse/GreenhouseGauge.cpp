@@ -28,19 +28,7 @@ UGreenhouseSimSubsystem* AGreenhouseGauge::GetSim() const
 
 void AGreenhouseGauge::Tick(float DeltaTime)
 {
+	// Disabled: the in-world resource bar was removed. Kept as a no-op so old level
+	// placements still load. Delete the actors in the level to remove entirely.
 	Super::Tick(DeltaTime);
-	const UGreenhouseSimSubsystem* S = GetSim();
-	if (!S) return;
-
-	float V = 0.f;
-	switch (Resource)
-	{
-		case EResource::Oxygen:   V = S->Oxygen;   break;
-		case EResource::Water:    V = S->Water;    break;
-		case EResource::Food:     V = S->Food;     break;
-		case EResource::Nitrogen: V = S->Nitrogen; break;
-		default:                  V = S->Power;    break;
-	}
-	const float T = FMath::Clamp(V * 0.01f, 0.02f, 1.f);
-	FillMesh->SetRelativeScale3D(FVector(1.f, 1.f, T * FullScaleZ));
 }

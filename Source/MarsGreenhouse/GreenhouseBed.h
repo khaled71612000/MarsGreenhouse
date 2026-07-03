@@ -1,6 +1,6 @@
-// GreenhouseBed.h — a placeable bed that REFLECTS the sim (shows/hides its plant,
-// swaps stage meshes, scales with growth) AND is CLICKABLE in the world like the
-// Valorant Sage security-room: click the bed to select it, then use the HUD to act.
+// GreenhouseBed.h — a placeable planter that REFLECTS the sim and is CLICKABLE in the world.
+// Growth is shown by SWAPPING per-crop stage meshes (not scaling). Potato and lettuce have
+// their own mesh sets; a spoiled crop shows the SpoiledMesh (bolted lettuce / rotted potato).
 #pragma once
 
 #include "CoreMinimal.h"
@@ -20,20 +20,28 @@ class MARSGREENHOUSE_API AGreenhouseBed : public AActor
 public:
 	AGreenhouseBed();
 
-	/** Which sim bed this represents (0..3). */
-	UPROPERTY(EditAnywhere, Category="Bed")
+	/** Which sim planter this represents (0..3). */
+	UPROPERTY(EditAnywhere, Category="Planter")
 	int32 BedIndex = 0;
 
-	/** Assign meshes for the growth stages, in order (e.g. sprout -> mature). Leave empty to just scale one mesh. */
-	UPROPERTY(EditAnywhere, Category="Bed")
-	TArray<TObjectPtr<UStaticMesh>> StageMeshes;
+	/** Potato stage meshes in order: Sprouting, Stolons, Tuber bulking, Ready. */
+	UPROPERTY(EditAnywhere, Category="Planter")
+	TArray<TObjectPtr<UStaticMesh>> PotatoStageMeshes;
 
-	/** Base scale of the plant at full growth. */
-	UPROPERTY(EditAnywhere, Category="Bed")
+	/** Lettuce stage meshes in order: Seed, Germination, Vegetative, Ready. */
+	UPROPERTY(EditAnywhere, Category="Planter")
+	TArray<TObjectPtr<UStaticMesh>> LettuceStageMeshes;
+
+	/** Optional mesh shown when the crop spoils (bolted / rotted). */
+	UPROPERTY(EditAnywhere, Category="Planter")
+	TObjectPtr<UStaticMesh> SpoiledMesh;
+
+	/** Fixed display scale (the mesh changes, not the size). */
+	UPROPERTY(EditAnywhere, Category="Planter")
 	float BaseScale = 1.f;
 
-	/** Half-size of the invisible click volume around the bed (world units). */
-	UPROPERTY(EditAnywhere, Category="Bed")
+	/** Half-size of the invisible click volume around the planter. */
+	UPROPERTY(EditAnywhere, Category="Planter")
 	FVector ClickExtent = FVector(60.f, 60.f, 40.f);
 
 protected:
@@ -42,7 +50,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> Root;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> PlantMesh;
-	UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> ClickBox; // receives world clicks
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> ClickBox;
 
 	UFUNCTION() void HandleClicked(AActor* TouchedActor, FKey ButtonPressed);
 	UFUNCTION() void HandleCursorOver(UPrimitiveComponent* Comp);
@@ -50,6 +58,6 @@ protected:
 
 private:
 	UGreenhouseSimSubsystem* GetSim() const;
-	int32 LastStage = -1;
-	bool  bHovered  = false;
+	UStaticMesh* LastMesh = nullptr;
+	bool  bHovered = false;
 };
