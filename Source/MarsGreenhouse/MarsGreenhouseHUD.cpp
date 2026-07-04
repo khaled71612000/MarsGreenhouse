@@ -341,12 +341,16 @@ void AMarsGreenhouseHUD::DrawHUD()
 			}
 		}
 
-		// ================= LEFT: CAMERAS =================
+		// ================= LEFT: CAMERAS (show ALL cameras) =================
 		if (PC && PC->NumCameras() > 0)
 		{
-			const int32 NC = FMath::Min(PC->NumCameras(), 2);
-			const float tw = 138.f, th = 78.f, y0 = 88.f;
-			for (int32 i = 0; i < PC->NumCameras() && i < NC; ++i)
+			const int32 NC = PC->NumCameras();
+			const float maxRowW = SW * 0.46f;                 // keep the row clear of the centered banner
+			float tw = 138.f, th = 78.f;
+			const float need = NC*tw + (NC-1)*8.f;
+			if (need > maxRowW) { tw = FMath::Max(82.f, (maxRowW - (NC-1)*8.f)/NC); th = tw*0.565f; }
+			const float y0 = 88.f;
+			for (int32 i = 0; i < NC; ++i)
 			{
 				AGreenhouseCamera* Cam = PC->GetCameraAt(i);
 				const float x = 14.f + i*(tw+8.f);
