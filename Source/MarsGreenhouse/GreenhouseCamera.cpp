@@ -3,6 +3,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "Kismet/GameplayStatics.h"
 
 AGreenhouseCamera::AGreenhouseCamera()
 {

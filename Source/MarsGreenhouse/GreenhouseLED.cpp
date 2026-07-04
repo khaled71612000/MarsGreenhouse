@@ -62,9 +62,10 @@ void AGreenhouseLED::Tick(float DeltaTime)
 	const UGreenhouseSimSubsystem* S = GetSim();
 	if (!S || !Light) return;
 
+	// Only the COLOR is driven by the sim. Intensity, attenuation radius, and every other
+	// light setting stay exactly as the artist configured them on the placed light in the editor.
 	const FLinearColor C = (S->LedColor == ELedColor::White)
 		? FLinearColor(1.0f, 0.98f, 0.94f)
 		: FLinearColor(0.62f, 0.28f, 0.98f); // purple "blurple"
 	Light->SetLightColor(C);
-	Light->SetIntensity(bHovered ? Intensity * 1.25f : Intensity);
 }

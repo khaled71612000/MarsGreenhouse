@@ -2,6 +2,8 @@
 // mission log, crew status, dynamic objective, Purple/White grow-light.
 #include "GreenhouseSimSubsystem.h"
 #include "MarsSimSettings.h"
+#include "GreenhouseBed.h"
+#include "Kismet/GameplayStatics.h"
 
 static const TCHAR* ResName(EResource R)
 {
@@ -38,9 +40,24 @@ void UGreenhouseSimSubsystem::ResetRun()
 	MissionLog.Reset();
 	Log(TEXT("Bustan online. Sol 1 begins."));
 	PickFunFact();
+	SyncBedsFromWorld();
 }
 
 void UGreenhouseSimSubsystem::RestartRun() { ResetRun(); }
+
+void UGreenhouseSimSubsystem::SyncBedsFromWorld()
+{
+	if (!GetWorld()) return;
+	TArray<AActor*> Found;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGreenhouseBed::StaticClass(), Found);
+	int32 MaxIdx = -1;
+	for (AActor* A : Found)
+		if (const AGreenhouseBed* B = Cast<AGreenhouseBed>(A))
+			MaxIdx = FMath::Max(MaxIdx, B->BedIndex);
+	const int32 Floor = FMath::Max(1, Settings ? Settings->NumBeds : 1);
+	const int32 Need  = FMath::Max(Floor, MaxIdx + 1);
+	if (Beds.Num() < Need) Beds.SetNum(Need); // grow only; never drop an occupied bed
+}
 
 bool UGreenhouseSimSubsystem::CanAct() const { return State == EGameState::Planning; }
 

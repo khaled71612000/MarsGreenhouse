@@ -54,7 +54,7 @@ void AMarsGreenhouseHUD::DrawHUD()
 	// ============================================================================
 	//  MASTER TEXT SIZE.  Bump FS to scale the WHOLE HUD at once.
 	// ============================================================================
-	const float FS  = 1.0f;
+	const float FS  = 1.8f;
 	const float CAP = 1.02f*FS;
 	const float SUB = 1.20f*FS;
 	const float LBL = 1.40f*FS;
@@ -76,9 +76,9 @@ void AMarsGreenhouseHUD::DrawHUD()
 	const FLinearColor Warn  (0.98f, 0.62f, 0.28f);
 	const FLinearColor PurpleC(0.66f, 0.46f, 1.00f);
 	const FLinearColor WhiteC (0.96f, 0.97f, 1.00f);
-	const FLinearColor CardBg(0.090f, 0.108f, 0.144f, 0.972f);
-	const FLinearColor CardHi(0.130f, 0.156f, 0.205f, 0.986f);
-	const FLinearColor Btn   (0.175f, 0.208f, 0.270f, 0.99f);
+	const FLinearColor CardBg(0.090f, 0.108f, 0.144f, 0.860f);
+	const FLinearColor CardHi(0.130f, 0.156f, 0.205f, 0.900f);
+	const FLinearColor Btn   (0.175f, 0.208f, 0.270f, 0.96f);
 	const FLinearColor ChoiceA(0.15f, 0.32f, 0.22f, 0.99f);
 	const FLinearColor ChoiceB(0.34f, 0.25f, 0.13f, 0.99f);
 	const FLinearColor IconBg(0.075f, 0.090f, 0.120f, 1.f);
@@ -146,14 +146,16 @@ void AMarsGreenhouseHUD::DrawHUD()
 	};
 
 	FName FrameHover; FString FrameTip;
-	auto Button = [&](float x, float y, float w, float h, const FString& label, const FString& sub, const FLinearColor& fill, const FLinearColor& txt, FName id, bool enabled, const FString& tip)
+	auto Button = [&](float x, float y, float w, float h, const FString& label, const FString& sub, const FLinearColor& fill, const FLinearColor& txt, FName id, bool enabled, const FString& tip, UTexture2D* icon = nullptr)
 	{
 		const bool hov = enabled && MouseIn(x, y, w, h);
 		const FLinearColor bg = !enabled ? FLinearColor(0.11f,0.13f,0.17f,0.9f) : (hov ? Brighten(fill) : fill);
 		if (ButtonTex) NineSlice(ButtonTex, x, y, w, h, Cfg->ButtonMargin, bg);
 		else { if (hov) RoundRect(x-2.f,y-2.f,w+4.f,h+4.f,9.f,Accent); RoundRect(x, y, w, h, 7.f, bg); }
-		DrawText(label, enabled ? txt : Muted, x + 15.f, y + (sub.IsEmpty() ? h*0.5f - 13.f : 7.f), Font, LBL);
-		if (!sub.IsEmpty()) DrawText(sub, enabled ? FLinearColor(txt.R*0.82f,txt.G*0.82f,txt.B*0.82f,0.94f) : Muted, x + 15.f, y + h - 24.f, Font, CAP);
+		float tx = x + 15.f;
+		if (icon) { const float is = FMath::Min(h - 8.f, 46.f); DrawTexture(icon, x + 12.f, y + (h - is)*0.5f, is, is, 0.f,0.f,1.f,1.f, enabled ? FLinearColor::White : FLinearColor(1,1,1,0.4f)); tx = x + 12.f + is + 9.f; }
+		DrawText(label, enabled ? txt : Muted, tx, y + (sub.IsEmpty() ? h*0.5f - 13.f : 7.f), Font, LBL);
+		if (!sub.IsEmpty()) DrawText(sub, enabled ? FLinearColor(txt.R*0.82f,txt.G*0.82f,txt.B*0.82f,0.94f) : Muted, tx, y + h - 24.f, Font, CAP);
 		if (enabled) { AddHitBox(FVector2D(x,y), FVector2D(w,h), id, true); if (hov) { FrameHover = id; FrameTip = tip; } }
 	};
 	// shared wrap heuristic (tuned for the loaded runtime font)
@@ -205,6 +207,15 @@ void AMarsGreenhouseHUD::DrawHUD()
 	// ================= WORLD LABELS + planter highlights + on-planter menus =================
 	if (!bEnded && !bCustomDash)
 	{
+		// Per-room interactables: only show clickables that belong to the ACTIVE camera's room.
+		// Tag a planter/LED (Details > Actor > Tags) with the room name; set that same string as the
+		// camera's RoomLabel. Untagged actors show on every camera; a camera with no RoomLabel shows all.
+		FName ActiveRoom = NAME_None;
+		if (PC && PC->NumCameras() > 0)
+			if (AGreenhouseCamera* AC = PC->GetCameraAt(PC->CurrentCameraIndex()))
+				if (!AC->RoomLabel.IsEmpty()) ActiveRoom = FName(*AC->RoomLabel);
+		auto InRoom = [&](const AActor* A){ return ActiveRoom.IsNone() || A->Tags.Num() == 0 || A->ActorHasTag(ActiveRoom); };
+
 		auto WorldTag = [&](const FVector& Loc, const FString& Txt, const FLinearColor& col, bool bold)
 		{
 			const FVector Scr = Project(Loc);
@@ -221,7 +232,8 @@ void AMarsGreenhouseHUD::DrawHUD()
 		UGameplayStatics::GetAllActorsOfClass(this, AGreenhouseLabel::StaticClass(), LabelActors);
 		for (AActor* A : LabelActors)
 			if (AGreenhouseLabel* Lab = Cast<AGreenhouseLabel>(A))
-				WorldTag(Lab->GetActorLocation() + FVector(0,0,Lab->HeightOffset), Lab->LabelText, Accent, false);
+				if (InRoom(Lab))
+					WorldTag(Lab->GetActorLocation() + FVector(0,0,Lab->HeightOffset), Lab->LabelText, Accent, false);
 
 		TArray<AActor*> BedActors;
 		UGameplayStatics::GetAllActorsOfClass(this, AGreenhouseBed::StaticClass(), BedActors);
@@ -229,26 +241,37 @@ void AMarsGreenhouseHUD::DrawHUD()
 		{
 			AGreenhouseBed* Bed = Cast<AGreenhouseBed>(A);
 			if (!Bed || !S->Beds.IsValidIndex(Bed->BedIndex)) continue;
+			if (!InRoom(Bed)) continue;
 			const int32 bi = Bed->BedIndex;
-			const FVector Scr = Project(Bed->GetActorLocation() + FVector(0,0,60.f));
-			if (Scr.Z <= 0.f) continue;
-			const float px = Scr.X, py = Scr.Y;
+			// project the 8 world-bounds corners -> a tight screen box that hugs the mesh at any angle
+			FVector BO, BE; Bed->GetActorBounds(false, BO, BE);
+			float minx=1e9f, miny=1e9f, maxx=-1e9f, maxy=-1e9f; bool anyFront=false;
+			for (int32 c = 0; c < 8; ++c)
+			{
+				const FVector corner = BO + FVector((c&1)?BE.X:-BE.X, (c&2)?BE.Y:-BE.Y, (c&4)?BE.Z:-BE.Z);
+				const FVector cs = Project(corner);
+				if (cs.Z > 0.f) { anyFront=true; minx=FMath::Min(minx,cs.X); miny=FMath::Min(miny,cs.Y); maxx=FMath::Max(maxx,cs.X); maxy=FMath::Max(maxy,cs.Y); }
+			}
+			if (!anyFront) continue;
+			minx=FMath::Clamp(minx,-40.f,SW+40.f); maxx=FMath::Clamp(maxx,-40.f,SW+40.f);
+			miny=FMath::Clamp(miny,-40.f,SH+40.f); maxy=FMath::Clamp(maxy,-40.f,SH+40.f);
+			const float bxw = FMath::Max(26.f, maxx-minx), byh = FMath::Max(22.f, maxy-miny);
+			const float px = (minx+maxx)*0.5f, py = (miny+maxy)*0.5f;
 			const FPlantedBed& B = S->Beds[bi];
 			const bool ready = S->IsBedReady(bi);
 			const bool sel   = (bi == Sel);
-			const bool hov   = FMath::Abs(px-mx) < 55.f && FMath::Abs(py-my) < 44.f;
+			const bool hov   = MouseIn(minx, miny, bxw, byh);
 			const FLinearColor hc = BedStateColor(B, bi);
-			const float bxs = 30.f, bys = 24.f;
 			const FLinearColor oc = sel ? Accent : (ready ? FLinearColor(hc.R,hc.G,hc.B, 0.5f+0.5f*pulse) : (hov ? Prim : FLinearColor(hc.R,hc.G,hc.B,0.55f)));
-			Outline(px-bxs, py-bys, bxs*2, bys*2, oc, (sel||hov)?2.5f:1.f);
-			Circle(px, py-bys-6.f, 5.f, hc);
-			DrawText(FString::Printf(TEXT("Planter %d"), bi), sel ? Accent : Sec, px-bxs, py+bys+4.f, Font, CAP);
-			AddHitBox(FVector2D(px-bxs, py-bys), FVector2D(bxs*2, bys*2), FName(*FString::Printf(TEXT("bed%d"), bi)), true);
+			Outline(minx, miny, bxw, byh, oc, (sel||hov)?2.5f:1.f);
+			Circle(px, miny-8.f, 5.f, hc);
+			DrawText(FString::Printf(TEXT("Planter %d"), bi), sel ? Accent : Sec, minx, maxy+4.f, Font, CAP);
+			AddHitBox(FVector2D(minx, miny), FVector2D(bxw, byh), FName(*FString::Printf(TEXT("bed%d"), bi)), true);
 
 			if (sel && bLive)
 			{
 				const float mw = 200.f, ax = px - mw*0.5f;
-				const float ay = FMath::Min(py - bys - 92.f, SH - 252.f);
+				const float ay = FMath::Min(miny - 92.f, SH - 252.f);
 				if (!B.bOccupied)
 				{
 					const float hw = (mw-6.f)*0.5f;
@@ -270,7 +293,9 @@ void AMarsGreenhouseHUD::DrawHUD()
 		UGameplayStatics::GetAllActorsOfClass(this, AGreenhouseLED::StaticClass(), LedActors);
 		for (AActor* A : LedActors)
 		{
-			const FVector2D P = WorldTag(A->GetActorLocation() + FVector(0,0,50.f), TEXT("Grow Lights"), S->LedColor==ELedColor::White?WhiteC:PurpleC, true);
+			if (!InRoom(A)) continue;
+			FVector LO, LE; A->GetActorBounds(false, LO, LE);
+			const FVector2D P = WorldTag(LO + FVector(0,0,LE.Z + 10.f), TEXT("Grow Lights"), S->LedColor==ELedColor::White?WhiteC:PurpleC, true);
 			if (P.X < 0.f) continue;
 			const bool bNear = FMath::Abs(P.X-mx) < 170.f && FMath::Abs(P.Y-my) < 84.f;
 			if (bNear && bLive)
@@ -289,7 +314,7 @@ void AMarsGreenhouseHUD::DrawHUD()
 		{
 			const TCHAR* RN[4] = { TEXT("OXYGEN"), TEXT("WATER"), TEXT("FOOD"), TEXT("POWER") };
 			const FLinearColor RC[4] = { O2C, H2OC, FoodC, PwrC };
-			const float cellW = 232.f, pillH = 66.f, px0 = 14.f, py = 10.f;
+			const float cellW = 252.f, pillH = 66.f, px0 = 14.f, py = 10.f;
 			const float pillW = cellW * 4.f;
 			Card(px0, py, pillW, pillH, CardBg);
 			for (int32 i = 0; i < 4; ++i)
@@ -302,11 +327,11 @@ void AMarsGreenhouseHUD::DrawHUD()
 				const bool low = Val <= 15.f;
 				ResIcon(i, cx + 36.f, py + pillH*0.5f, 20.f, RC[i]);
 				DrawText(RN[i], Sec, cx + 62.f, py + 11.f, Font, CAP);
-				DrawText(FString::Printf(TEXT("%d%%"), FMath::RoundToInt(DispVal[i])), low ? Red : Prim, cx + cellW - 70.f, py + 9.f, Font, VAL);
+				DrawText(FString::Printf(TEXT("%d%%"), FMath::RoundToInt(DispVal[i])), low ? Red : Prim, cx + cellW - 82.f, py + 9.f, Font, VAL);
 				SegMeter(cx + 62.f, py + 42.f, cellW - 86.f, 12.f, DispVal[i]*0.01f, low ? Red : RC[i]);
 				if (i < 3) DrawRect(Divide, cx + cellW - 1.f, py + 14.f, 1.f, pillH - 28.f);
 			}
-			const float pw = 152.f, pxp = SW - pw - 14.f;
+			const float pw = 166.f, pxp = SW - pw - 14.f;
 			Card(pxp, py, pw, pillH, CardBg);
 			DrawText(TEXT("SOL"), Muted, pxp + 18.f, py + 11.f, Font, CAP);
 			DrawText(FString::Printf(TEXT("%02d"), S->Sol), Accent, pxp + 18.f, py + 27.f, Font, VAL);
@@ -315,14 +340,14 @@ void AMarsGreenhouseHUD::DrawHUD()
 		}
 
 		{
-			const float sbw = 660.f, sx = SW*0.5f - sbw*0.5f, sy = 84.f;
+			const float sbw = 700.f, sx = SW*0.5f - sbw*0.5f, sy = 84.f;
 			if (S->DustLevel > 0.f) { Card(sx, sy, sbw, 40.f, FLinearColor(0.24f,0.13f,0.10f,0.99f)); DrawText(FString::Printf(TEXT("DUST STORM   solar -%d%% this sol"), FMath::RoundToInt(S->DustLevel*100.f)), Warn, sx + 20.f, sy + 9.f, Font, SUB); }
 			else if (S->NextDust > 0.f) { Card(sx, sy, sbw, 36.f, CardBg); DrawText(FString::Printf(TEXT("Storm forecast next sol (solar -%d%%) - bank power"), FMath::RoundToInt(S->NextDust*100.f)), Warn, sx + 20.f, sy + 7.f, Font, SUB); }
 		}
 
 		// ================= RIGHT: CREW STATUS =================
 		{
-			const float cw = 384.f, cx = SW - cw - 14.f, cyTop = 88.f;
+			const float cw = 410.f, cx = SW - cw - 14.f, cyTop = 88.f;
 			const int32 NCrew = Cfg->Crew.Num();
 			const float rowH = 58.f, ph = 42.f + NCrew * rowH;
 			Card(cx, cyTop, cw, ph, CardBg);
@@ -393,7 +418,7 @@ void AMarsGreenhouseHUD::DrawHUD()
 		// ================= BOTTOM-CENTER: GROW-LIGHT + PLANTERS + STAGE =================
 		{
 			const float py0 = SH - 264.f;
-			const float gw = 320.f, gx = SW*0.5f - gw*0.5f;
+			const float gw = 348.f, gx = SW*0.5f - gw*0.5f;
 			Card(gx, py0, gw, 42.f, CardBg);
 			const float seg = (gw-6.f)/2.f;
 			Button(gx+3.f,     py0+3.f, seg-2.f, 36.f, TEXT("Red + Blue"), FString(), S->LedColor==ELedColor::Purple?PurpleC:Btn, S->LedColor==ELedColor::Purple?AccTxt:Sec, FName("led_purple"), true, TEXT("Red + Blue: more oxygen, steady growth (lettuce)."));
@@ -401,21 +426,25 @@ void AMarsGreenhouseHUD::DrawHUD()
 			DrawText(TEXT("Grow-light"), Muted, gx, py0 + 46.f, Font, CAP);
 
 			const float cy = py0 + 74.f; const int32 NB = S->Beds.Num();
-			const float chw = 66.f, cg = 8.f, tot = NB*chw + (NB-1)*cg, cx0 = SW*0.5f - tot*0.5f;
+			// one neat centered row that auto-shrinks the chips so ALL planters fit on screen
+			const float cg = 8.f, maxRowW = SW * 0.66f;
+			float chw = 72.f;
+			if (NB*chw + (NB-1)*cg > maxRowW) chw = FMath::Max(38.f, (maxRowW - (NB-1)*cg)/NB);
+			const float tot = NB*chw + (NB-1)*cg, cx0 = SW*0.5f - tot*0.5f;
 			for (int32 i = 0; i < NB; ++i)
 			{
 				const float x = cx0 + i*(chw+cg); const bool sel = (i==Sel);
 				Card(x, cy, chw, 38.f, sel ? CardHi : CardBg);
 				if (sel) Outline(x, cy, chw, 38.f, Accent, 2.f);
-				DrawText(FString::Printf(TEXT("%d"), i), sel ? Accent : Sec, x + 12.f, cy + 8.f, Font, LBL);
-				Circle(x + chw - 14.f, cy + 19.f, 5.f, BedStateColor(S->Beds[i], i));
+				DrawText(FString::Printf(TEXT("%d"), i), sel ? Accent : Sec, x + 10.f, cy + 8.f, Font, LBL);
+				Circle(x + chw - 12.f, cy + 19.f, 4.f, BedStateColor(S->Beds[i], i));
 				AddHitBox(FVector2D(x, cy), FVector2D(chw, 38.f), FName(*FString::Printf(TEXT("bed%d"), i)), true);
 			}
 
 			if (S->Beds.IsValidIndex(Sel))
 			{
 				const FPlantedBed& B = S->Beds[Sel];
-				const float pw = 430.f, sx = SW*0.5f - pw*0.5f, sy = cy + 46.f;
+				const float pw = 464.f, sx = SW*0.5f - pw*0.5f, sy = cy + 46.f;
 				Card(sx, sy, pw, 48.f, CardBg);
 				if (!B.bOccupied) DrawText(FString::Printf(TEXT("Planter %d - empty, plant a crop"), Sel), Muted, sx + 18.f, sy + 15.f, Font, SUB);
 				else
@@ -444,22 +473,23 @@ void AMarsGreenhouseHUD::DrawHUD()
 		const bool bEle = bLive && S->Water >= Cfg->ElectrolyzeWaterCost && S->Power >= Cfg->ElectrolyzePowerCost;
 		const FLinearColor HF = bReady ? Accent : Btn;
 		const FLinearColor HT = bReady ? AccTxt : Prim;
-		const float endW = 216.f, g = 8.f, dockW = availW - endW - g;
+		const float endW = 236.f, g = 8.f, dockW = availW - endW - g;
 		const int32 NBD = 5; const float bw = (dockW - (NBD-1)*g)/NBD, bh = 56.f, ry = barY + 5.f;
-		auto AB = [&](int32 i, const FString& lbl, const FString& sub, const FLinearColor& c, const FLinearColor& tc, FName id, bool en, const FString& tip){ Button(M + i*(bw+g), ry, bw, bh, lbl, sub, c, tc, id, en, tip); };
-		AB(0, TEXT("Plant"), TEXT("potato / lettuce"), Btn, Prim, FName("plant_potato"), bLive && !bOcc, TEXT("Plant a crop in the selected planter."));
-		AB(1, TEXT("Water"), FString::Printf(TEXT("-%d H2O"), FMath::RoundToInt(Cfg->WaterPlantWaterCost)), Btn, Prim, FName("act_water"), bWater, TEXT("Water the selected planter. Neglected plants die."));
-		AB(2, bReady ? TEXT("Harvest !") : TEXT("Harvest"), TEXT("[E]"), HF, HT, FName("act_harvest"), bHarv, TEXT("Collect. Early = partial; too late = spoiled."));
-		AB(3, TEXT("Mine ice"), FString::Printf(TEXT("+%d -%d Pwr"), FMath::RoundToInt(Cfg->MineIceWater), FMath::RoundToInt(Cfg->MineIcePowerCost)), Btn, Prim, FName("act_ice"), bIce, TEXT("Water from ice. Costs power."));
-		AB(4, TEXT("Electrolyze"), FString::Printf(TEXT("+%d O2"), FMath::RoundToInt(Cfg->ElectrolyzeOxygen)), Btn, Prim, FName("act_electro"), bEle, TEXT("Water into oxygen. Costs water + power."));
-		Button(SW - M - endW, ry, endW, bh, TEXT("END DAY"), TEXT("[Enter]"), Accent, AccTxt, FName("advance"), bLive, TEXT("Resolve the sol: crew eats, crops grow, weather turns."));
+		UTexture2D* IcPlant=L(Cfg->IconPlant), *IcWat=L(Cfg->IconWaterAction), *IcHarv=L(Cfg->IconHarvest), *IcIce=L(Cfg->IconMineIce), *IcEle=L(Cfg->IconElectrolyze), *IcEnd=L(Cfg->IconEndDay);
+		auto AB = [&](int32 i, const FString& lbl, const FString& sub, const FLinearColor& c, const FLinearColor& tc, FName id, bool en, const FString& tip, UTexture2D* ic){ Button(M + i*(bw+g), ry, bw, bh, lbl, sub, c, tc, id, en, tip, ic); };
+		AB(0, TEXT("Plant"), TEXT("potato / lettuce"), Btn, Prim, FName("plant_potato"), bLive && !bOcc, TEXT("Plant a crop in the selected planter."), IcPlant);
+		AB(1, TEXT("Water"), FString::Printf(TEXT("-%d H2O"), FMath::RoundToInt(Cfg->WaterPlantWaterCost)), Btn, Prim, FName("act_water"), bWater, TEXT("Water the selected planter. Neglected plants die."), IcWat);
+		AB(2, bReady ? TEXT("Harvest !") : TEXT("Harvest"), TEXT("[E]"), HF, HT, FName("act_harvest"), bHarv, TEXT("Collect. Early = partial; too late = spoiled."), IcHarv);
+		AB(3, TEXT("Mine ice"), FString::Printf(TEXT("+%d -%d Pwr"), FMath::RoundToInt(Cfg->MineIceWater), FMath::RoundToInt(Cfg->MineIcePowerCost)), Btn, Prim, FName("act_ice"), bIce, TEXT("Water from ice. Costs power."), IcIce);
+		AB(4, TEXT("Electrolyze"), FString::Printf(TEXT("+%d O2"), FMath::RoundToInt(Cfg->ElectrolyzeOxygen)), Btn, Prim, FName("act_electro"), bEle, TEXT("Water into oxygen. Costs water + power."), IcEle);
+		Button(SW - M - endW, ry, endW, bh, TEXT("END DAY"), TEXT("[Enter]"), Accent, AccTxt, FName("advance"), bLive, TEXT("Resolve the sol: crew eats, crops grow, weather turns."), IcEnd);
 	}
 
 	// ================= EVENT CARD (auto-height) =================
 	if (S->bEventActive && !bCustomEvent)
 	{
 		const FString Sit = S->CurrentEvent.Situation.ToString();
-		const float w = 840.f, ex = SW*0.5f - w*0.5f;
+		const float w = 884.f, ex = SW*0.5f - w*0.5f;
 		const int32 sLines = WrapCount(Sit, w - 60.f, LBL);
 		const bool single = S->CurrentEvent.bSingleChoice;
 		const float choicesH = single ? 72.f : 122.f;
@@ -502,7 +532,7 @@ void AMarsGreenhouseHUD::DrawHUD()
 	if (PC && PC->TutorialActive() && !bEnded)
 	{
 		const FString Prompt = PC->TutorialPrompt();
-		const float bw = 820.f, bx = SW*0.5f - bw*0.5f, wrapW = bw - 56.f;
+		const float bw = 864.f, bx = SW*0.5f - bw*0.5f, wrapW = bw - 56.f;
 		const int32 tLines = WrapCount(Prompt, wrapW, SUB);
 		const float bh = 52.f + tLines*(32.f*SUB) + 46.f;   // header + generous text + button row
 		const float by = SH*0.56f - bh*0.5f;

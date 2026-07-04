@@ -48,11 +48,4 @@ public:
 	UPROPERTY(EditAnywhere, Category="Camera|Preview")
 	int32 PreviewHeight = 180;
 
-	UTextureRenderTarget2D* GetPreviewRT() const { return PreviewRT; }
-
-protected:
-	virtual void BeginPlay() override;
-
-	UPROPERTY(VisibleAnywhere, Category="Camera") TObjectPtr<USceneCaptureComponent2D> Capture;
-	UPROPERTY() TObjectPtr<UTextureRenderTarget2D> PreviewRT;
-};
+	UTextu

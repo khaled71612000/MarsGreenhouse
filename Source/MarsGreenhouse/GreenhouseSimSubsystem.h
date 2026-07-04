@@ -53,6 +53,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Sim") bool Electrolyze();
 	UFUNCTION(BlueprintCallable, Category="Sim") void AdvanceSolNow();
 	UFUNCTION(BlueprintCallable, Category="Sim") void RestartRun();
+	UFUNCTION(BlueprintCallable, Category="Sim") void SyncBedsFromWorld(); // grow Beds to fit every placed planter
 	UFUNCTION(BlueprintCallable, Category="Sim") void ResolveEvent(int32 ChoiceIndex);
 
 	UFUNCTION(BlueprintCallable, Category="Sim") bool CanAct() const;

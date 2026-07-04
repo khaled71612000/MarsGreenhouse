@@ -64,12 +64,21 @@ void AMarsGreenhousePlayerController::BeginPlay()
 	TArray<AActor*> Found;
 	UGameplayStatics::GetAllActorsOfClass(this, AGreenhouseCamera::StaticClass(), Found);
 	for (AActor* A : Found) if (auto* Cam = Cast<AGreenhouseCamera>(A)) Cameras.Add(Cam);
+	// Stable HUD order: sort A->Z by room, then by camera label.
+	Cameras.Sort([](const AGreenhouseCamera& A, const AGreenhouseCamera& B)
+	{
+		const int32 R = A.RoomLabel.Compare(B.RoomLabel, ESearchCase::IgnoreCase);
+		return R != 0 ? R < 0 : A.CameraLabel.Compare(B.CameraLabel, ESearchCase::IgnoreCase) < 0;
+	});
 	if (Cameras.Num() > 0)
 	{
 		CamIndex = 0;
 		CamBaseRot = Cameras[0]->GetActorRotation();
 		SetViewTarget(Cameras[0]);
 	}
+
+	// Size the sim's bed array to however many planters are actually placed in the level.
+	if (auto* SimBeds = GetSim()) SimBeds->SyncBedsFromWorld();
 
 	if (auto* S = GetSim())
 	{
