@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
-// "Bustan" HUD — cohesive slate-blue + grey palette, soft sky-blue accent.
-// LARGE, readable type driven by one master scale (FS). High-res font, solid panels, big crisp icons.
+// "Bustan" HUD — concept-art palette, unified top pill, deliberate sizing hierarchy.
+// Variable-text panels (tutorial, objective, tooltip) AUTO-SIZE to their content -> no overflow.
+// Grow-light shown as "Red + Blue" / "White". One master text scale (FS).
 
 #include "MarsGreenhouseHUD.h"
 #include "GreenhouseSimSubsystem.h"
@@ -34,7 +35,6 @@ void AMarsGreenhouseHUD::DrawHUD()
 	const UMarsSimSettings* Cfg = GetDefault<UMarsSimSettings>();
 	auto L = [&](const TSoftObjectPtr<UTexture2D>& P) -> UTexture2D* { return P.IsNull() ? nullptr : P.LoadSynchronous(); };
 	UFont* CustomFont = Cfg->HudFont.IsNull() ? nullptr : Cfg->HudFont.LoadSynchronous();
-	// Fallback = engine LARGE font (high-res atlas -> stays crisp when scaled up).
 	UFont* Font = CustomFont ? CustomFont : (GEngine ? GEngine->GetLargeFont() : nullptr);
 	UTexture2D* ResTex[4] = { L(Cfg->IconOxygen), L(Cfg->IconWater), L(Cfg->IconFood), L(Cfg->IconPower) };
 	UTexture2D* PanelTex  = L(Cfg->PanelFrame);
@@ -52,39 +52,39 @@ void AMarsGreenhouseHUD::DrawHUD()
 	const float pulse = 0.5f + 0.5f * FMath::Sin(Now * 3.5f);
 
 	// ============================================================================
-	//  MASTER TEXT SIZE.  Everything scales from FS. Bump this one number to make
-	//  the WHOLE HUD bigger or smaller. 1.0 is already large & readable.
+	//  MASTER TEXT SIZE.  Bump FS to scale the WHOLE HUD at once.
 	// ============================================================================
 	const float FS  = 1.0f;
-	const float CAP = 1.02f*FS;   // small labels / captions
-	const float SUB = 1.20f*FS;   // secondary text
-	const float LBL = 1.40f*FS;   // body / button labels
-	const float VAL = 1.85f*FS;   // numbers (%, SOL)
-	const float BIG = 2.45f*FS;   // headlines
+	const float CAP = 1.02f*FS;
+	const float SUB = 1.20f*FS;
+	const float LBL = 1.40f*FS;
+	const float VAL = 1.85f*FS;
+	const float BIG = 2.45f*FS;
 
-	// ---- one cohesive slate-blue + grey palette (soft sky-blue accent) ----
-	const FLinearColor Prim  (0.93f, 0.96f, 1.00f);
-	const FLinearColor Sec   (0.68f, 0.74f, 0.83f);
-	const FLinearColor Muted (0.50f, 0.55f, 0.64f);
-	const FLinearColor Accent(0.52f, 0.74f, 0.94f);   // soft sky blue
-	const FLinearColor AccTxt(0.04f, 0.09f, 0.15f);
-	const FLinearColor O2C   (0.44f, 0.82f, 0.82f);
-	const FLinearColor H2OC  (0.46f, 0.68f, 0.95f);
-	const FLinearColor FoodC (0.56f, 0.82f, 0.56f);
-	const FLinearColor PwrC  (0.96f, 0.74f, 0.42f);
-	const FLinearColor Red   (0.94f, 0.48f, 0.48f);
-	const FLinearColor Green (0.52f, 0.84f, 0.58f);
-	const FLinearColor Warn  (0.96f, 0.76f, 0.46f);   // soft amber for warnings / growing
-	const FLinearColor PurpleC(0.66f, 0.50f, 0.98f);
-	const FLinearColor WhiteC (0.94f, 0.96f, 1.00f);
-	const FLinearColor CardBg(0.10f, 0.13f, 0.18f, 0.985f);   // solid slate blue-grey
-	const FLinearColor CardHi(0.14f, 0.18f, 0.25f, 0.99f);
-	const FLinearColor Btn   (0.17f, 0.21f, 0.28f, 0.99f);    // uniform button fill
-	const FLinearColor ChoiceA(0.15f, 0.30f, 0.21f, 0.99f);  // event option A — green slate
-	const FLinearColor ChoiceB(0.32f, 0.24f, 0.14f, 0.99f);  // event option B — amber slate
-	const FLinearColor IconBg(0.10f, 0.13f, 0.18f, 1.f);
-	const FLinearColor Border(0.55f, 0.72f, 0.94f, 0.22f);
-	const FLinearColor BarBg (1.f, 1.f, 1.f, 0.10f);
+	// ---- concept-art palette: dark slate panels, teal-blue borders, vivid resource hues ----
+	const FLinearColor Prim  (0.95f, 0.97f, 1.00f);
+	const FLinearColor Sec   (0.73f, 0.79f, 0.88f);
+	const FLinearColor Muted (0.54f, 0.59f, 0.69f);
+	const FLinearColor Accent(0.40f, 0.72f, 1.00f);
+	const FLinearColor AccTxt(0.03f, 0.07f, 0.12f);
+	const FLinearColor O2C   (0.36f, 0.66f, 0.99f);
+	const FLinearColor H2OC  (0.30f, 0.80f, 0.93f);
+	const FLinearColor FoodC (0.47f, 0.86f, 0.38f);
+	const FLinearColor PwrC  (0.99f, 0.82f, 0.28f);
+	const FLinearColor Red   (0.98f, 0.44f, 0.44f);
+	const FLinearColor Green (0.44f, 0.88f, 0.50f);
+	const FLinearColor Warn  (0.98f, 0.62f, 0.28f);
+	const FLinearColor PurpleC(0.66f, 0.46f, 1.00f);
+	const FLinearColor WhiteC (0.96f, 0.97f, 1.00f);
+	const FLinearColor CardBg(0.090f, 0.108f, 0.144f, 0.972f);
+	const FLinearColor CardHi(0.130f, 0.156f, 0.205f, 0.986f);
+	const FLinearColor Btn   (0.175f, 0.208f, 0.270f, 0.99f);
+	const FLinearColor ChoiceA(0.15f, 0.32f, 0.22f, 0.99f);
+	const FLinearColor ChoiceB(0.34f, 0.25f, 0.13f, 0.99f);
+	const FLinearColor IconBg(0.075f, 0.090f, 0.120f, 1.f);
+	const FLinearColor Border(0.42f, 0.66f, 0.86f, 0.32f);
+	const FLinearColor BarBg (1.f, 1.f, 1.f, 0.09f);
+	const FLinearColor Divide(1.f, 1.f, 1.f, 0.09f);
 
 	float mx = -1.f, my = -1.f;
 	if (PC) PC->GetMousePosition(mx, my);
@@ -107,12 +107,12 @@ void AMarsGreenhouseHUD::DrawHUD()
 	};
 	auto Circle = [&](float cx, float cy, float rad, const FLinearColor& col){ RoundRect(cx-rad, cy-rad, rad*2.f, rad*2.f, rad, col); };
 	auto Outline = [&](float x, float y, float w, float h, const FLinearColor& c, float t){ DrawRect(c,x,y,w,t); DrawRect(c,x,y+h-t,w,t); DrawRect(c,x,y,t,h); DrawRect(c,x+w-t,y,t,h); };
-	// crisp rounded-square icon
-	auto ResIcon = [&](int32 i, float x, float y, float s, const FLinearColor& col)
+	auto ResIcon = [&](int32 i, float bcx, float bcy, float brad, const FLinearColor& col)
 	{
-		if (ResTex[i]) { DrawTexture(ResTex[i], x, y, s, s, 0.f,0.f,1.f,1.f, col); return; }
-		RoundRect(x + s*0.10f, y + s*0.10f, s*0.80f, s*0.80f, s*0.24f, col);
-		RoundRect(x + s*0.32f, y + s*0.32f, s*0.36f, s*0.36f, s*0.12f, IconBg);
+		if (ResTex[i]) { DrawTexture(ResTex[i], bcx-brad, bcy-brad, brad*2.f, brad*2.f, 0.f,0.f,1.f,1.f, FLinearColor::White); return; }
+		Circle(bcx, bcy, brad, col);
+		Circle(bcx, bcy, brad*0.60f, FLinearColor(col.R*0.20f, col.G*0.20f, col.B*0.20f, 1.f));
+		Circle(bcx, bcy, brad*0.30f, col);
 	};
 	auto NineSlice = [&](UTexture2D* Tex, float x, float y, float w, float h, float margin, const FLinearColor& tint)
 	{
@@ -149,18 +149,29 @@ void AMarsGreenhouseHUD::DrawHUD()
 	auto Button = [&](float x, float y, float w, float h, const FString& label, const FString& sub, const FLinearColor& fill, const FLinearColor& txt, FName id, bool enabled, const FString& tip)
 	{
 		const bool hov = enabled && MouseIn(x, y, w, h);
-		const FLinearColor bg = !enabled ? FLinearColor(0.10f,0.12f,0.16f,0.9f) : (hov ? Brighten(fill) : fill);
+		const FLinearColor bg = !enabled ? FLinearColor(0.11f,0.13f,0.17f,0.9f) : (hov ? Brighten(fill) : fill);
 		if (ButtonTex) NineSlice(ButtonTex, x, y, w, h, Cfg->ButtonMargin, bg);
 		else { if (hov) RoundRect(x-2.f,y-2.f,w+4.f,h+4.f,9.f,Accent); RoundRect(x, y, w, h, 7.f, bg); }
 		DrawText(label, enabled ? txt : Muted, x + 15.f, y + (sub.IsEmpty() ? h*0.5f - 13.f : 7.f), Font, LBL);
 		if (!sub.IsEmpty()) DrawText(sub, enabled ? FLinearColor(txt.R*0.82f,txt.G*0.82f,txt.B*0.82f,0.94f) : Muted, x + 15.f, y + h - 24.f, Font, CAP);
 		if (enabled) { AddHitBox(FVector2D(x,y), FVector2D(w,h), id, true); if (hov) { FrameHover = id; FrameTip = tip; } }
 	};
+	// shared wrap heuristic (tuned for the loaded runtime font)
+	const float kCharW = 11.0f;
+	auto WrapCount = [&](const FString& Text, float maxW, float scale) -> int32
+	{
+		TArray<FString> Words; Text.ParseIntoArray(Words, TEXT(" "));
+		const int32 maxChars = FMath::Max(8, (int32)(maxW / (kCharW*scale)));
+		FString Ln; int32 n = 0;
+		for (const FString& Wd : Words) { if (Ln.Len()+Wd.Len()+1 > maxChars) { ++n; Ln = Wd; } else { Ln = Ln.IsEmpty()?Wd:Ln+TEXT(" ")+Wd; } }
+		if (!Ln.IsEmpty()) ++n;
+		return FMath::Max(1, n);
+	};
 	auto DrawWrapped = [&](const FString& Text, const FLinearColor& Col, float x, float y, float maxW, float scale) -> float
 	{
 		TArray<FString> Words; Text.ParseIntoArray(Words, TEXT(" "));
-		const float charW = 13.2f * scale; const int32 maxChars = FMath::Max(8, (int32)(maxW / charW));
-		const float lineH = 26.f * scale;
+		const int32 maxChars = FMath::Max(8, (int32)(maxW / (kCharW*scale)));
+		const float lineH = 27.f * scale;
 		FString Ln; float ly = y;
 		for (const FString& Wd : Words)
 		{
@@ -236,12 +247,13 @@ void AMarsGreenhouseHUD::DrawHUD()
 
 			if (sel && bLive)
 			{
-				const float mw = 196.f, ax = px - mw*0.5f, ay = py - bys - 92.f;
+				const float mw = 200.f, ax = px - mw*0.5f;
+				const float ay = FMath::Min(py - bys - 92.f, SH - 252.f);
 				if (!B.bOccupied)
 				{
 					const float hw = (mw-6.f)*0.5f;
 					Button(ax,        ay, hw, 38.f, TEXT("Potato"),  FString(), Btn, Prim, FName("plant_potato"),  true, TEXT("Potato - slow, high food, likes white light."));
-					Button(ax+hw+6.f, ay, hw, 38.f, TEXT("Lettuce"), FString(), Btn, Prim, FName("plant_lettuce"), true, TEXT("Lettuce - fast, good oxygen, likes purple light."));
+					Button(ax+hw+6.f, ay, hw, 38.f, TEXT("Lettuce"), FString(), Btn, Prim, FName("plant_lettuce"), true, TEXT("Lettuce - fast, good oxygen, likes red + blue light."));
 				}
 				else if (B.bSpoiled) Button(ax, ay, mw, 38.f, TEXT("Clear planter"), FString(), Btn, Red, FName("act_harvest"), true, TEXT("Remove the spoiled crop."));
 				else if (ready)      Button(ax, ay, mw, 38.f, TEXT("Harvest now"),   FString(), Accent, AccTxt, FName("act_harvest"), true, TEXT("Collect before it spoils."));
@@ -260,12 +272,12 @@ void AMarsGreenhouseHUD::DrawHUD()
 		{
 			const FVector2D P = WorldTag(A->GetActorLocation() + FVector(0,0,50.f), TEXT("Grow Lights"), S->LedColor==ELedColor::White?WhiteC:PurpleC, true);
 			if (P.X < 0.f) continue;
-			const bool bNear = FMath::Abs(P.X-mx) < 108.f && FMath::Abs(P.Y-my) < 80.f;
+			const bool bNear = FMath::Abs(P.X-mx) < 170.f && FMath::Abs(P.Y-my) < 84.f;
 			if (bNear && bLive)
 			{
-				const float bw = 106.f, ax = P.X - (bw*2+6.f)*0.5f, ay = P.Y - 46.f;
-				Button(ax,        ay, bw, 34.f, TEXT("Purple"), FString(), S->LedColor==ELedColor::Purple?PurpleC:Btn, S->LedColor==ELedColor::Purple?AccTxt:Prim, FName("led_purple"), true, TEXT("More oxygen, steady growth."));
-				Button(ax+bw+6.f, ay, bw, 34.f, TEXT("White"),  FString(), S->LedColor==ELedColor::White ?WhiteC :Btn, S->LedColor==ELedColor::White?AccTxt:Prim,  FName("led_white"),  true, TEXT("Faster growth, less oxygen."));
+				const float bw = 152.f, ax = P.X - (bw*2+8.f)*0.5f, ay = P.Y - 48.f;
+				Button(ax,        ay, bw, 36.f, TEXT("Red + Blue"), FString(), S->LedColor==ELedColor::Purple?PurpleC:Btn, S->LedColor==ELedColor::Purple?AccTxt:Prim, FName("led_purple"), true, TEXT("Red + Blue: more oxygen, steady growth (lettuce)."));
+				Button(ax+bw+8.f, ay, bw, 36.f, TEXT("White"),      FString(), S->LedColor==ELedColor::White ?WhiteC :Btn, S->LedColor==ELedColor::White?AccTxt:Prim,  FName("led_white"),  true, TEXT("White: faster growth, less oxygen (potato)."));
 				break;
 			}
 		}
@@ -273,36 +285,38 @@ void AMarsGreenhouseHUD::DrawHUD()
 
 	if (!bCustomDash)
 	{
-		// ================= TOP RESOURCE BAR =================
+		// ================= TOP RESOURCE PILL (unified) =================
 		{
-			const TCHAR* RN[4] = { TEXT("Oxygen"), TEXT("Water"), TEXT("Food"), TEXT("Power") };
+			const TCHAR* RN[4] = { TEXT("OXYGEN"), TEXT("WATER"), TEXT("FOOD"), TEXT("POWER") };
 			const FLinearColor RC[4] = { O2C, H2OC, FoodC, PwrC };
-			const float bw = 288.f, bh = 66.f; float bx = 14.f, by = 10.f;
+			const float cellW = 232.f, pillH = 66.f, px0 = 14.f, py = 10.f;
+			const float pillW = cellW * 4.f;
+			Card(px0, py, pillW, pillH, CardBg);
 			for (int32 i = 0; i < 4; ++i)
 			{
+				const float cx = px0 + i*cellW;
 				const float Val = Meters[i];
 				DispVal[i] = FMath::FInterpTo(DispVal[i], Val, dt, 8.f);
-				if (FMath::Abs(Val - LastVal[i]) >= 1.f) { LastDelta[i] = Val - LastVal[i]; Floaters.Add({ FString::Printf(TEXT("%+d"), FMath::RoundToInt(LastDelta[i])), LastDelta[i]>0?Green:Red, bx + bw*0.5f, by + bh + 4.f, 1.3f }); }
+				if (FMath::Abs(Val - LastVal[i]) >= 1.f) { LastDelta[i] = Val - LastVal[i]; Floaters.Add({ FString::Printf(TEXT("%+d"), FMath::RoundToInt(LastDelta[i])), LastDelta[i]>0?Green:Red, cx + cellW*0.5f, py + pillH + 4.f, 1.3f }); }
 				LastVal[i] = Val;
 				const bool low = Val <= 15.f;
-				Card(bx, by, bw, bh, low ? FLinearColor(0.20f,0.10f,0.12f,0.985f) : CardBg);
-				ResIcon(i, bx + 14.f, by + 14.f, 40.f, RC[i]);
-				DrawText(RN[i], Sec, bx + 66.f, by + 10.f, Font, SUB);
-				DrawText(FString::Printf(TEXT("%d%%"), FMath::RoundToInt(DispVal[i])), low ? Red : Prim, bx + bw - 78.f, by + 8.f, Font, VAL);
-				SegMeter(bx + 66.f, by + 44.f, bw - 82.f, 14.f, DispVal[i]*0.01f, low ? Red : RC[i]);
-				bx += bw + 8.f;
+				ResIcon(i, cx + 36.f, py + pillH*0.5f, 20.f, RC[i]);
+				DrawText(RN[i], Sec, cx + 62.f, py + 11.f, Font, CAP);
+				DrawText(FString::Printf(TEXT("%d%%"), FMath::RoundToInt(DispVal[i])), low ? Red : Prim, cx + cellW - 70.f, py + 9.f, Font, VAL);
+				SegMeter(cx + 62.f, py + 42.f, cellW - 86.f, 12.f, DispVal[i]*0.01f, low ? Red : RC[i]);
+				if (i < 3) DrawRect(Divide, cx + cellW - 1.f, py + 14.f, 1.f, pillH - 28.f);
 			}
-			const float pw = 184.f, pxp = SW - pw - 14.f;
-			Card(pxp, by, pw, bh, CardBg);
-			DrawText(TEXT("SOL"), Muted, pxp + 18.f, by + 10.f, Font, CAP);
-			DrawText(FString::Printf(TEXT("%02d"), S->Sol), Accent, pxp + 18.f, by + 26.f, Font, VAL);
-			DrawText(FString::Printf(TEXT("/ %d"), Cfg->TotalSols), Sec, pxp + 84.f, by + 38.f, Font, CAP);
-			DrawText(bLive ? TEXT("DAY") : TEXT("..."), Sec, pxp + pw - 56.f, by + 12.f, Font, CAP);
+			const float pw = 152.f, pxp = SW - pw - 14.f;
+			Card(pxp, py, pw, pillH, CardBg);
+			DrawText(TEXT("SOL"), Muted, pxp + 18.f, py + 11.f, Font, CAP);
+			DrawText(FString::Printf(TEXT("%02d"), S->Sol), Accent, pxp + 18.f, py + 27.f, Font, VAL);
+			DrawText(FString::Printf(TEXT("/ %d"), Cfg->TotalSols), Sec, pxp + 84.f, py + 39.f, Font, CAP);
+			DrawText(bLive ? TEXT("DAY") : TEXT("..."), Sec, pxp + pw - 54.f, py + 13.f, Font, CAP);
 		}
 
 		{
 			const float sbw = 660.f, sx = SW*0.5f - sbw*0.5f, sy = 84.f;
-			if (S->DustLevel > 0.f) { Card(sx, sy, sbw, 40.f, FLinearColor(0.20f,0.12f,0.10f,0.99f)); DrawText(FString::Printf(TEXT("DUST STORM   solar -%d%% this sol"), FMath::RoundToInt(S->DustLevel*100.f)), Warn, sx + 20.f, sy + 9.f, Font, SUB); }
+			if (S->DustLevel > 0.f) { Card(sx, sy, sbw, 40.f, FLinearColor(0.24f,0.13f,0.10f,0.99f)); DrawText(FString::Printf(TEXT("DUST STORM   solar -%d%% this sol"), FMath::RoundToInt(S->DustLevel*100.f)), Warn, sx + 20.f, sy + 9.f, Font, SUB); }
 			else if (S->NextDust > 0.f) { Card(sx, sy, sbw, 36.f, CardBg); DrawText(FString::Printf(TEXT("Storm forecast next sol (solar -%d%%) - bank power"), FMath::RoundToInt(S->NextDust*100.f)), Warn, sx + 20.f, sy + 7.f, Font, SUB); }
 		}
 
@@ -310,15 +324,15 @@ void AMarsGreenhouseHUD::DrawHUD()
 		{
 			const float cw = 384.f, cx = SW - cw - 14.f, cyTop = 88.f;
 			const int32 NCrew = Cfg->Crew.Num();
-			const float rowH = 58.f, ph = 40.f + NCrew * rowH;
+			const float rowH = 58.f, ph = 42.f + NCrew * rowH;
 			Card(cx, cyTop, cw, ph, CardBg);
-			DrawText(TEXT("CREW STATUS"), Accent, cx + 18.f, cyTop + 12.f, Font, SUB);
+			DrawText(TEXT("CREW STATUS"), Accent, cx + 18.f, cyTop + 13.f, Font, SUB);
 			for (int32 i = 0; i < NCrew; ++i)
 			{
-				const float ry = cyTop + 40.f + i * rowH;
+				const float ry = cyTop + 42.f + i * rowH;
 				UTexture2D* Portrait = Cfg->CrewPortraits.IsValidIndex(i) ? L(Cfg->CrewPortraits[i]) : nullptr;
 				if (Portrait) DrawTexture(Portrait, cx + 14.f, ry + 6.f, 42.f, 42.f, 0.f,0.f,1.f,1.f);
-				else { RoundRect(cx + 14.f, ry + 6.f, 42.f, 42.f, 10.f, FLinearColor(0.16f,0.20f,0.27f,1.f)); DrawText(Cfg->Crew[i].Name.ToString().Left(1), Accent, cx + 27.f, ry + 15.f, Font, SUB); }
+				else { RoundRect(cx + 14.f, ry + 6.f, 42.f, 42.f, 10.f, FLinearColor(0.17f,0.21f,0.28f,1.f)); DrawText(Cfg->Crew[i].Name.ToString().Left(1), Accent, cx + 27.f, ry + 15.f, Font, SUB); }
 				DrawText(Cfg->Crew[i].Name.ToString(), Prim, cx + 66.f, ry + 6.f, Font, CAP);
 				DrawText(Cfg->Crew[i].Role.ToString(), Muted, cx + 66.f, ry + 30.f, Font, CAP);
 				const FString St = S->GetCrewStatus(i);
@@ -345,33 +359,41 @@ void AMarsGreenhouseHUD::DrawHUD()
 			}
 		}
 
-		// ================= LEFT-BOTTOM: MISSION LOG + OBJECTIVE =================
+		// ================= LEFT-BOTTOM: OBJECTIVE (auto-height, bottom-anchored) + LOG above =================
 		{
-			const float lw = 448.f, lx = 14.f, lh = 200.f, ly = SH - lh - 208.f;
+			const float lw = 480.f, lx = 14.f;
+			const FString Obj = S->CurrentObjective();
+			const float ocw = lw - 36.f;
+			const int32 oLines = WrapCount(Obj, ocw, CAP);
+			const float oh = 50.f + oLines*(32.f*CAP);   // header + generous per-line, always > text
+			const float oy = SH - 96.f - oh;
+			Card(lx, oy, lw, oh, CardBg);
+			DrawRect(Accent, lx, oy, 4.f, oh);
+			DrawText(TEXT("OBJECTIVE"), Accent, lx + 18.f, oy + 13.f, Font, SUB);
+			DrawWrapped(Obj, Prim, lx + 18.f, oy + 44.f, ocw, CAP);
+
+			const float lh = 200.f, ly = oy - 8.f - lh;
 			Card(lx, ly, lw, lh, CardBg);
-			DrawText(TEXT("MISSION LOG"), Accent, lx + 18.f, ly + 12.f, Font, SUB);
+			DrawText(TEXT("MISSION LOG"), Accent, lx + 18.f, ly + 13.f, Font, SUB);
 			const int32 N = S->MissionLog.Num(), Show = FMath::Min(5, N);
 			for (int32 i = 0; i < Show; ++i)
 			{
 				FString Ln = S->MissionLog[N - Show + i];
-				if (Ln.Len() > 44) Ln = Ln.Left(43) + TEXT("...");
-				DrawText(Ln, i == Show-1 ? Prim : Sec, lx + 18.f, ly + 44.f + i*30.f, Font, CAP);
+				if (Ln.Len() > 54) Ln = Ln.Left(53) + TEXT("...");
+				const bool last = (i == Show-1);
+				Circle(lx + 24.f, ly + 52.f + i*30.f, 3.f, last ? Accent : Muted);
+				DrawText(Ln, last ? Prim : Sec, lx + 34.f, ly + 45.f + i*30.f, Font, CAP);
 			}
-			const float oy = ly + lh + 8.f, oh = 92.f;
-			Card(lx, oy, lw, oh, CardBg);
-			DrawRect(Accent, lx, oy, 4.f, oh);
-			DrawText(TEXT("OBJECTIVE"), Accent, lx + 18.f, oy + 12.f, Font, SUB);
-			DrawWrapped(S->CurrentObjective(), Prim, lx + 18.f, oy + 42.f, lw - 32.f, CAP);
 		}
 
-		// ================= BOTTOM-CENTER: LIGHT + PLANTERS + STAGE =================
+		// ================= BOTTOM-CENTER: GROW-LIGHT + PLANTERS + STAGE =================
 		{
-			const float py0 = SH - 250.f;
-			const float gw = 264.f, gx = SW*0.5f - gw*0.5f;
+			const float py0 = SH - 264.f;
+			const float gw = 320.f, gx = SW*0.5f - gw*0.5f;
 			Card(gx, py0, gw, 42.f, CardBg);
 			const float seg = (gw-6.f)/2.f;
-			Button(gx+3.f,     py0+3.f, seg-2.f, 36.f, TEXT("Purple"), FString(), S->LedColor==ELedColor::Purple?PurpleC:Btn, S->LedColor==ELedColor::Purple?AccTxt:Sec, FName("led_purple"), true, TEXT("Purple: more oxygen, steady growth."));
-			Button(gx+3.f+seg, py0+3.f, seg-2.f, 36.f, TEXT("White"),  FString(), S->LedColor==ELedColor::White ?WhiteC :Btn, S->LedColor==ELedColor::White?AccTxt:Sec,  FName("led_white"), true, TEXT("White: faster growth, less oxygen."));
+			Button(gx+3.f,     py0+3.f, seg-2.f, 36.f, TEXT("Red + Blue"), FString(), S->LedColor==ELedColor::Purple?PurpleC:Btn, S->LedColor==ELedColor::Purple?AccTxt:Sec, FName("led_purple"), true, TEXT("Red + Blue: more oxygen, steady growth (lettuce)."));
+			Button(gx+3.f+seg, py0+3.f, seg-2.f, 36.f, TEXT("White"),      FString(), S->LedColor==ELedColor::White ?WhiteC :Btn, S->LedColor==ELedColor::White?AccTxt:Sec,  FName("led_white"), true, TEXT("White: faster growth, less oxygen (potato)."));
 			DrawText(TEXT("Grow-light"), Muted, gx, py0 + 46.f, Font, CAP);
 
 			const float cy = py0 + 74.f; const int32 NB = S->Beds.Num();
@@ -429,20 +451,25 @@ void AMarsGreenhouseHUD::DrawHUD()
 		Button(SW - M - endW, ry, endW, bh, TEXT("END DAY"), TEXT("[Enter]"), Accent, AccTxt, FName("advance"), bLive, TEXT("Resolve the sol: crew eats, crops grow, weather turns."));
 	}
 
-	// ================= EVENT CARD =================
+	// ================= EVENT CARD (auto-height) =================
 	if (S->bEventActive && !bCustomEvent)
 	{
-		const float w = 840.f, h = 350.f, ex = SW*0.5f - w*0.5f, ey = SH*0.38f - h*0.5f;
+		const FString Sit = S->CurrentEvent.Situation.ToString();
+		const float w = 840.f, ex = SW*0.5f - w*0.5f;
+		const int32 sLines = WrapCount(Sit, w - 60.f, LBL);
+		const bool single = S->CurrentEvent.bSingleChoice;
+		const float choicesH = single ? 72.f : 122.f;
+		const float h = 100.f + sLines*(32.f*LBL) + choicesH;
+		const float ey = SH*0.40f - h*0.5f;
 		Card(ex, ey, w, h, CardHi);
 		DrawRect(Accent, ex + 14.f, ey + 16.f, 4.f, 28.f);
-		DrawText(S->CurrentEvent.bSingleChoice ? TEXT("STORY") : TEXT("DECISION"), Accent, ex + 30.f, ey + 18.f, Font, SUB);
+		DrawText(single ? TEXT("STORY") : TEXT("DECISION"), Accent, ex + 30.f, ey + 18.f, Font, SUB);
 		DrawText(S->CurrentEvent.Speaker.ToString(), Prim, ex + 30.f, ey + 46.f, Font, VAL);
-		DrawWrapped(S->CurrentEvent.Situation.ToString(), Prim, ex + 30.f, ey + 92.f, w - 60.f, LBL);
-		if (S->CurrentEvent.bSingleChoice)
+		DrawWrapped(Sit, Sec, ex + 30.f, ey + 92.f, w - 60.f, LBL);
+		if (single)
 			Button(ex + 30.f, ey + h - 70.f, w - 60.f, 52.f, S->CurrentEvent.ChoiceA.Label.ToString(), FString(), Accent, AccTxt, FName("evt_a"), true, FString());
 		else
 		{
-			// two options in clearly different colours (green A / amber B)
 			const float ax = ex + 30.f, aw = w - 60.f;
 			Button(ax, ey + h - 114.f, aw, 50.f, FString::Printf(TEXT("A:  %s"), *S->CurrentEvent.ChoiceA.Label.ToString()), EffectArrows(S->CurrentEvent.ChoiceA.Effect), ChoiceA, Prim, FName("evt_a"), true, FString());
 			DrawRect(Green, ax + 2.f, ey + h - 110.f, 5.f, 42.f);
@@ -467,16 +494,20 @@ void AMarsGreenhouseHUD::DrawHUD()
 		Button(cx + 34.f, cy + 272.f, cw - 68.f, 52.f, TEXT("RESTART RUN"), FString(), Accent, AccTxt, FName("restart"), true, FString());
 	}
 
-	// ================= TUTORIAL =================
+	// ================= TUTORIAL (auto-height) =================
 	if (PC && PC->TutorialActive() && !bEnded)
 	{
-		const float bw = 900.f, bx = SW*0.5f - bw*0.5f, by = SH*0.5f - 46.f, bh = 80.f;
+		const FString Prompt = PC->TutorialPrompt();
+		const float bw = 820.f, bx = SW*0.5f - bw*0.5f, wrapW = bw - 56.f;
+		const int32 tLines = WrapCount(Prompt, wrapW, SUB);
+		const float bh = 52.f + tLines*(32.f*SUB) + 46.f;   // header + generous text + button row
+		const float by = SH*0.56f - bh*0.5f;
 		Card(bx, by, bw, bh, CardHi);
 		DrawRect(FLinearColor(Accent.R, Accent.G, Accent.B, 0.5f+0.4f*pulse), bx + 14.f, by + 12.f, 4.f, bh - 24.f);
-		DrawText(FString::Printf(TEXT("TUTORIAL  %d/6"), TStep + 1), Accent, bx + 28.f, by + 11.f, Font, CAP);
-		DrawWrapped(PC->TutorialPrompt(), Prim, bx + 28.f, by + 34.f, bw - 250.f, SUB);
-		Button(bx + bw - 108.f, by + bh - 38.f, 94.f, 30.f, TEXT("Skip"), FString(), Btn, Red, FName("tut_skip"), true, FString());
-		if (PC->TutorialWantsNext()) Button(bx + bw - 214.f, by + bh - 38.f, 98.f, 30.f, TEXT("Next"), FString(), Accent, AccTxt, FName("tut_next"), true, FString());
+		DrawText(FString::Printf(TEXT("TUTORIAL  %d/6"), TStep + 1), Accent, bx + 28.f, by + 12.f, Font, CAP);
+		DrawWrapped(Prompt, Prim, bx + 28.f, by + 44.f, wrapW, SUB);
+		Button(bx + bw - 108.f, by + bh - 40.f, 94.f, 32.f, TEXT("Skip"), FString(), Btn, Red, FName("tut_skip"), true, FString());
+		if (PC->TutorialWantsNext()) Button(bx + bw - 214.f, by + bh - 40.f, 98.f, 32.f, TEXT("Next"), FString(), Accent, AccTxt, FName("tut_next"), true, FString());
 	}
 
 	// ================= FLOATERS =================
@@ -489,12 +520,15 @@ void AMarsGreenhouseHUD::DrawHUD()
 		DrawText(F.Text, C, F.X, F.Y, Font, VAL);
 	}
 
-	// ================= TOOLTIP =================
+	// ================= TOOLTIP (auto-height) =================
 	if (FrameHover == HoverBox) HoverTime += dt; else { HoverBox = FrameHover; HoverTime = 0.f; }
 	if (HoverTime > 0.6f && !FrameTip.IsEmpty() && mx > 0.f)
 	{
-		const float tw = 340.f, tx = FMath::Min(mx + 16.f, SW - tw - 8.f), ty = my + 18.f;
-		Card(tx, ty, tw, 58.f, CardHi);
+		const float tw = 340.f, tx = FMath::Min(mx + 16.f, SW - tw - 8.f);
+		const int32 ttl = WrapCount(FrameTip, tw - 28.f, CAP);
+		const float tth = 26.f + ttl*(32.f*CAP);
+		const float ty = FMath::Min(my + 18.f, SH - tth - 8.f);
+		Card(tx, ty, tw, tth, CardHi);
 		DrawWrapped(FrameTip, Prim, tx + 14.f, ty + 11.f, tw - 28.f, CAP);
 	}
 }

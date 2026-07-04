@@ -195,7 +195,7 @@ FString UGreenhouseSimSubsystem::CurrentObjective() const
 	if (State == EGameState::Won)  return TEXT("Bustan survived all 15 sols. Well done, Commander.");
 	if (State == EGameState::Lost) return TEXT("The garden fell. Press Restart to try again.");
 	if (Power  <= 20.f) return TEXT("Power critical - spend actions sparingly and pass the sol.");
-	if (Oxygen <= 20.f) return TEXT("Oxygen low - electrolyze water, or grow lettuce under purple light.");
+	if (Oxygen <= 20.f) return TEXT("Oxygen low - electrolyze water, or grow lettuce under red + blue light.");
 	if (Food   <= 20.f) return TEXT("Food low - harvest a ready crop or plant fast lettuce.");
 	int32 Occ = 0, Ready = 0;
 	for (int32 i = 0; i < Beds.Num(); ++i) { if (Beds[i].bOccupied) ++Occ; if (IsBedReady(i)) ++Ready; }
