@@ -16,8 +16,6 @@
 #include "Engine/Texture2D.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
-#include "CanvasItem.h"
-#include "TextureResource.h"
 
 void AMarsGreenhouseHUD::NotifyHitBoxClick(FName BoxName)
 {
@@ -94,17 +92,18 @@ void AMarsGreenhouseHUD::DrawHUD()
 			DrawRect(col, x + dxv, y + h - 1.f - i, w - 2.f*dxv, 1.f);
 		}
 	};
-	auto Tri = [&](const FVector2D& a, const FVector2D& b, const FVector2D& c, const FLinearColor& col){ FCanvasTriangleItem T(a,b,c,GWhiteTexture); T.SetColor(col); Canvas->DrawItem(T); };
 	auto Circle = [&](float cx, float cy, float rad, const FLinearColor& col){ RoundRect(cx-rad, cy-rad, rad*2.f, rad*2.f, rad, col); };
 	auto Outline = [&](float x, float y, float w, float h, const FLinearColor& c, float t){ DrawRect(c,x,y,w,t); DrawRect(c,x,y+h-t,w,t); DrawRect(c,x,y,t,h); DrawRect(c,x+w-t,y,t,h); };
+	// Fallback icons from circles / rounded-rects (no triangle item, so no GWhiteTexture dependency).
 	auto Icon = [&](int32 type, float x, float y, float s, const FLinearColor& col)
 	{
+		const float cx = x + s*0.5f, cy = y + s*0.5f;
 		switch (type)
 		{
-			case 0: RoundRect(x,y,s,s,s*0.5f,col); RoundRect(x+s*0.3f,y+s*0.3f,s*0.4f,s*0.4f,s*0.2f,IconBg); break;
-			case 1: Tri(FVector2D(x+s*0.5f,y),FVector2D(x+s*0.16f,y+s*0.58f),FVector2D(x+s*0.84f,y+s*0.58f),col); RoundRect(x+s*0.16f,y+s*0.4f,s*0.68f,s*0.6f,s*0.34f,col); break;
-			case 2: Tri(FVector2D(x+s*0.5f,y),FVector2D(x+s*0.12f,y+s*0.62f),FVector2D(x+s*0.5f,y+s),col); Tri(FVector2D(x+s*0.5f,y),FVector2D(x+s*0.88f,y+s*0.62f),FVector2D(x+s*0.5f,y+s),col); break;
-			default: Tri(FVector2D(x+s*0.58f,y),FVector2D(x+s*0.18f,y+s*0.6f),FVector2D(x+s*0.52f,y+s*0.52f),col); Tri(FVector2D(x+s*0.48f,y+s*0.48f),FVector2D(x+s*0.82f,y+s*0.4f),FVector2D(x+s*0.42f,y+s),col); break;
+			case 0: Circle(cx, cy, s*0.5f, col); Circle(cx, cy, s*0.28f, IconBg); break;                                    // oxygen ring
+			case 1: Circle(cx, cy + s*0.06f, s*0.42f, col); RoundRect(x+s*0.42f, y, s*0.16f, s*0.5f, s*0.08f, col); break;   // water drop
+			case 2: RoundRect(x+s*0.12f, y+s*0.12f, s*0.76f, s*0.76f, s*0.24f, col); break;                                  // food square
+			default: RoundRect(x+s*0.36f, y+s*0.05f, s*0.28f, s*0.9f, s*0.1f, col); break;                                   // power bar
 		}
 	};
 	// draw a resource icon: texture if assigned, else the primitive shape
