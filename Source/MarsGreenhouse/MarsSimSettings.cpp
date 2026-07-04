@@ -18,15 +18,16 @@ UMarsSimSettings::UMarsSimSettings()
 
 	// ---- Crew roster (flavor) ----
 	auto Member = [](const TCHAR* N, const TCHAR* R){ FCrewMember M; M.Name = FText::FromString(N); M.Role = FText::FromString(R); return M; };
+	// Real Arab astronauts / candidates (MENA theme).
 	Crew = {
-		Member(TEXT("Cmdr. Layla Haddad"),   TEXT("Commander")),
-		Member(TEXT("Dr. Yusuf Karim"),      TEXT("Physician")),
-		Member(TEXT("Eng. Nour Al-Rashid"),  TEXT("Engineer")),
-		Member(TEXT("Salma Nasser"),         TEXT("Botanist")),
-		Member(TEXT("Omar Farouk"),          TEXT("Geologist")),
-		Member(TEXT("Amir Khalil"),          TEXT("Technician")),
-		Member(TEXT("Rania Aziz"),           TEXT("Pilot")),
-		Member(TEXT("Tariq Mansour"),        TEXT("Systems Specialist"))
+		Member(TEXT("Sultan bin Salman Al Saud"), TEXT("Commander / Payload")),
+		Member(TEXT("Muhammed Faris"),            TEXT("Research Pilot")),
+		Member(TEXT("Hazza Al Mansouri"),         TEXT("Pilot")),
+		Member(TEXT("Sultan Al Neyadi"),          TEXT("Mission Specialist")),
+		Member(TEXT("Rayyanah Barnawi"),          TEXT("Biomedical Researcher")),
+		Member(TEXT("Ali Al Qarni"),              TEXT("Fighter Pilot")),
+		Member(TEXT("Sara Sabry"),                TEXT("Engineer")),
+		Member(TEXT("Salam Abualhayjaa"),         TEXT("Space Researcher"))
 	};
 
 	Objective = FText::FromString(TEXT("Keep Bustan's life support stable and grow enough food to survive 15 sols."));
@@ -42,7 +43,7 @@ UMarsSimSettings::UMarsSimSettings()
 
 	FEventCard B6;
 	B6.Id = FName("Beat_Micrometeorite"); B6.ScriptedSol = 6;
-	B6.Speaker   = FText::FromString(TEXT("Eng. Nour Al-Rashid"));
+	B6.Speaker   = FText::FromString(TEXT("Sultan Al Neyadi"));
 	B6.Situation = FText::FromString(TEXT("A micrometeorite cracked an outer panel and dust is creeping toward the array. Seal it on emergency power, or pull the crew off the beds to patch it by hand?"));
 	B6.ChoiceA.Label = FText::FromString(TEXT("Emergency seal (burn power)"));
 	B6.ChoiceA.Effect.Power = -16.f;
@@ -51,7 +52,7 @@ UMarsSimSettings::UMarsSimSettings()
 
 	FEventCard B9;
 	B9.Id = FName("Beat_Recycler"); B9.ScriptedSol = 9;
-	B9.Speaker   = FText::FromString(TEXT("Dr. Yusuf Karim"));
+	B9.Speaker   = FText::FromString(TEXT("Rayyanah Barnawi"));
 	B9.Situation = FText::FromString(TEXT("The water recycler is failing. Cannibalize the spare unit for parts, or run it degraded and bleed water until we can fix it?"));
 	B9.ChoiceA.Label = FText::FromString(TEXT("Cannibalize spare (costs power)"));
 	B9.ChoiceA.Effect.Power = -14.f;
@@ -60,7 +61,7 @@ UMarsSimSettings::UMarsSimSettings()
 
 	FEventCard B12;
 	B12.Id = FName("Beat_StormWarning"); B12.ScriptedSol = 12;
-	B12.Speaker   = FText::FromString(TEXT("Cmdr. Layla Haddad"));
+	B12.Speaker   = FText::FromString(TEXT("Sultan bin Salman Al Saud"));
 	B12.Situation = FText::FromString(TEXT("Orbital imaging shows a regional dust storm sweeping in - the kind that swallows whole provinces back home. It will choke the array for days. Ration and bank power now, or gamble it misses Bustan?"));
 	B12.ChoiceA.Label = FText::FromString(TEXT("Ration and bank power"));
 	B12.ChoiceA.Effect.Food = -6.f; B12.ChoiceA.Effect.Power = 14.f;
@@ -69,14 +70,14 @@ UMarsSimSettings::UMarsSimSettings()
 
 	FEventCard B14;
 	B14.Id = FName("Beat_StormHits"); B14.ScriptedSol = 14;
-	B14.Speaker   = FText::FromString(TEXT("Cmdr. Layla Haddad"));
+	B14.Speaker   = FText::FromString(TEXT("Sultan bin Salman Al Saud"));
 	B14.Situation = FText::FromString(TEXT("The storm is on us. The sky is the color of rust and the solar array is crawling. One more sol, team. Hold Bustan together and bring everyone home."));
 	Single(B14, TEXT("We hold the garden."));
 
 	// ================= RANDOM POOL =================
 	FEventCard R1;
 	R1.Id = FName("DustOnArray"); R1.EarliestSol = 2;
-	R1.Speaker   = FText::FromString(TEXT("Eng. Nour Al-Rashid"));
+	R1.Speaker   = FText::FromString(TEXT("Sultan Al Neyadi"));
 	R1.Situation = FText::FromString(TEXT("Dust is dulling the solar array. Send a crew out on a risky EVA to clear it, or ride it out?"));
 	R1.ChoiceA.Label = FText::FromString(TEXT("Clear it (risky EVA)"));
 	R1.ChoiceA.Effect.Power = 16.f; R1.ChoiceA.Effect.Oxygen = -8.f;
@@ -85,8 +86,8 @@ UMarsSimSettings::UMarsSimSettings()
 
 	FEventCard R2;
 	R2.Id = FName("SickCrew"); R2.EarliestSol = 3;
-	R2.Speaker   = FText::FromString(TEXT("Dr. Yusuf Karim"));
-	R2.Situation = FText::FromString(TEXT("Amir is unwell. Rest him and lose a pair of hands, or push the team through?"));
+	R2.Speaker   = FText::FromString(TEXT("Rayyanah Barnawi"));
+	R2.Situation = FText::FromString(TEXT("A crew member is unwell. Rest them and lose a pair of hands, or push the team through?"));
 	R2.ChoiceA.Label = FText::FromString(TEXT("Order rest"));
 	R2.ChoiceA.Effect.Food = -8.f;
 	R2.ChoiceB.Label = FText::FromString(TEXT("Push through"));
@@ -94,7 +95,7 @@ UMarsSimSettings::UMarsSimSettings()
 
 	FEventCard R3;
 	R3.Id = FName("Condensation"); R3.EarliestSol = 2;
-	R3.Speaker   = FText::FromString(TEXT("Salma Nasser"));
+	R3.Speaker   = FText::FromString(TEXT("Sara Sabry"));
 	R3.Situation = FText::FromString(TEXT("Overnight condensation pooled on the dome. Collect the clean water, or vent it to protect the crops from mold?"));
 	R3.ChoiceA.Label = FText::FromString(TEXT("Collect the water"));
 	R3.ChoiceA.Effect.Water = 16.f;
@@ -103,7 +104,7 @@ UMarsSimSettings::UMarsSimSettings()
 
 	FEventCard R4;
 	R4.Id = FName("LedSurge"); R4.EarliestSol = 4;
-	R4.Speaker   = FText::FromString(TEXT("Eng. Nour Al-Rashid"));
+	R4.Speaker   = FText::FromString(TEXT("Sultan Al Neyadi"));
 	R4.Situation = FText::FromString(TEXT("We can overdrive the grow-lights for a burst of photosynthesis. Push them, or spare the power?"));
 	R4.ChoiceA.Label = FText::FromString(TEXT("Overdrive the lights"));
 	R4.ChoiceA.Effect.Oxygen = 12.f; R4.ChoiceA.Effect.Power = -12.f;
@@ -112,7 +113,7 @@ UMarsSimSettings::UMarsSimSettings()
 
 	FEventCard R5;
 	R5.Id = FName("MoraleFeast"); R5.EarliestSol = 5;
-	R5.Speaker   = FText::FromString(TEXT("Cmdr. Layla Haddad"));
+	R5.Speaker   = FText::FromString(TEXT("Sultan bin Salman Al Saud"));
 	R5.Situation = FText::FromString(TEXT("Morale is low. Spend some rations on a proper shared meal to lift the crew, or stay lean?"));
 	R5.ChoiceA.Label = FText::FromString(TEXT("Share a meal"));
 	R5.ChoiceA.Effect.Food = -10.f; R5.ChoiceA.Effect.Oxygen = 6.f;
