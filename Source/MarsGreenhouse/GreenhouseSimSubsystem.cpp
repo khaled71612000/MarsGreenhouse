@@ -1,6 +1,12 @@
-// GreenhouseSimSubsystem.cpp — turn-based narrative survival brain with manual harvest + spoilage.
+// GreenhouseSimSubsystem.cpp — turn-based survival brain (Bustan): manual harvest, spoilage,
+// mission log, crew status, dynamic objective, Purple/White grow-light.
 #include "GreenhouseSimSubsystem.h"
 #include "MarsSimSettings.h"
+
+static const TCHAR* ResName(EResource R)
+{
+	switch (R) { case EResource::Oxygen: return TEXT("Oxygen"); case EResource::Water: return TEXT("Water"); case EResource::Food: return TEXT("Food"); default: return TEXT("Power"); }
+}
 
 void UGreenhouseSimSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -19,7 +25,7 @@ void UGreenhouseSimSubsystem::ResetRun()
 
 	Sol = 1; DustLevel = 0.f; NextDust = RollNewDust();
 	State = EGameState::Planning;
-	LedColor = ELedColor::Balanced;
+	LedColor = ELedColor::Purple;
 	Harvests = 0; Spoiled = 0;
 	for (int32 i = 0; i < 4; ++i) ZeroSolCounter[i] = 0.f;
 
@@ -29,6 +35,8 @@ void UGreenhouseSimSubsystem::ResetRun()
 	FiredEvents.Reset();
 	bEventActive = false;
 	CurrentEvent = FEventCard();
+	MissionLog.Reset();
+	Log(TEXT("Bustan online. Sol 1 begins."));
 	PickFunFact();
 }
 
@@ -37,6 +45,12 @@ void UGreenhouseSimSubsystem::RestartRun() { ResetRun(); }
 bool UGreenhouseSimSubsystem::CanAct() const { return State == EGameState::Planning; }
 
 void UGreenhouseSimSubsystem::Accumulate(float& Meter, float Delta) { Meter = FMath::Clamp(Meter + Delta, 0.f, 100.f); }
+
+void UGreenhouseSimSubsystem::Log(const FString& Line)
+{
+	MissionLog.Add(FString::Printf(TEXT("Sol %d  -  %s"), Sol, *Line));
+	while (MissionLog.Num() > 12) MissionLog.RemoveAt(0);
+}
 
 void UGreenhouseSimSubsystem::PickFunFact()
 {
@@ -68,28 +82,18 @@ float UGreenhouseSimSubsystem::RewardBonus() const
 
 float UGreenhouseSimSubsystem::LedGrowthMult() const
 {
-	switch (LedColor)
-	{
-		case ELedColor::Blue: return Settings->LedGrowthBlue;
-		case ELedColor::Red:  return Settings->LedGrowthRed;
-		default:              return Settings->LedGrowthBalanced;
-	}
+	return (LedColor == ELedColor::White) ? Settings->LedGrowthWhite : Settings->LedGrowthPurple;
 }
 
 float UGreenhouseSimSubsystem::LedO2Mult() const
 {
-	switch (LedColor)
-	{
-		case ELedColor::Blue: return Settings->LedO2Blue;
-		case ELedColor::Red:  return Settings->LedO2Red;
-		default:              return Settings->LedO2Balanced;
-	}
+	return (LedColor == ELedColor::White) ? Settings->LedO2White : Settings->LedO2Purple;
 }
 
 // ---------------- light + actions ----------------
 
 void UGreenhouseSimSubsystem::SetLed(ELedColor NewColor) { LedColor = NewColor; }
-void UGreenhouseSimSubsystem::CycleLed() { LedColor = static_cast<ELedColor>(((uint8)LedColor + 1) % 3); }
+void UGreenhouseSimSubsystem::CycleLed() { LedColor = (LedColor == ELedColor::Purple) ? ELedColor::White : ELedColor::Purple; }
 
 void UGreenhouseSimSubsystem::PlantCrop(int32 BedIndex, ECropType Crop)
 {
@@ -98,6 +102,7 @@ void UGreenhouseSimSubsystem::PlantCrop(int32 BedIndex, ECropType Crop)
 	if (Bed.bOccupied) return;
 	Bed = FPlantedBed();
 	Bed.bOccupied = true; Bed.Crop = Crop; Bed.Health = 1.f;
+	Log(FString::Printf(TEXT("Planted %s in Planter %d."), Crop == ECropType::Potato ? TEXT("potato") : TEXT("lettuce"), BedIndex));
 }
 
 bool UGreenhouseSimSubsystem::WaterPlant(int32 BedIndex)
@@ -118,15 +123,15 @@ bool UGreenhouseSimSubsystem::HarvestBed(int32 BedIndex)
 	FPlantedBed& Bed = Beds[BedIndex];
 	if (!Bed.bOccupied) return false;
 
-	// Spoiled crop: clearing it frees the planter but yields nothing.
-	if (Bed.bSpoiled) { Bed = FPlantedBed(); return true; }
+	if (Bed.bSpoiled) { Bed = FPlantedBed(); Log(FString::Printf(TEXT("Cleared spoiled crop from Planter %d."), BedIndex)); return true; }
 
-	// Yield scales with growth (early = partial) and health (neglected = smaller).
 	const FCropStats& C = Settings->GetCrop(Bed.Crop);
 	const float Quality = FMath::Clamp(Bed.Growth, 0.f, 1.f) * FMath::Clamp(Bed.Health, 0.2f, 1.f);
-	Accumulate(Food, C.FoodYield * Quality * (1.f + RewardBonus()));
+	const int32 Yield = FMath::RoundToInt(C.FoodYield * Quality * (1.f + RewardBonus()));
+	Accumulate(Food, (float)Yield);
 	++Harvests;
 	OnHarvest.Broadcast(BedIndex);
+	Log(FString::Printf(TEXT("Harvested %s from Planter %d (+%d food)."), Bed.Crop == ECropType::Potato ? TEXT("potato") : TEXT("lettuce"), BedIndex, Yield));
 	Bed = FPlantedBed();
 	return true;
 }
@@ -167,6 +172,15 @@ int32 UGreenhouseSimSubsystem::SolsLeftToHarvest(int32 BedIndex) const
 	return FMath::Max(0, FMath::CeilToInt(C.RipeWindowSols - Beds[BedIndex].Overripe));
 }
 
+FString UGreenhouseSimSubsystem::GetCrewStatus(int32 Index) const
+{
+	if (State == EGameState::Lost) return TEXT("Critical");
+	const float Lowest = FMath::Min(FMath::Min(Oxygen, Water), FMath::Min(Food, Power));
+	if (Lowest < 20.f && (Index % 2 == 0)) return TEXT("Strained");
+	if (Food < 30.f && (Index % 3 == 0))   return TEXT("Tired");
+	return TEXT("OK");
+}
+
 FString UGreenhouseSimSubsystem::ResultRank() const
 {
 	const int32 Score = Harvests * 10 - Spoiled * 6 + (State == EGameState::Won ? 25 : 0) + (Sol - 1) * 2;
@@ -174,6 +188,20 @@ FString UGreenhouseSimSubsystem::ResultRank() const
 	if (Score >= 60) return TEXT("A");
 	if (Score >= 35) return TEXT("B");
 	return TEXT("C");
+}
+
+FString UGreenhouseSimSubsystem::CurrentObjective() const
+{
+	if (State == EGameState::Won)  return TEXT("Bustan survived all 15 sols. Well done, Commander.");
+	if (State == EGameState::Lost) return TEXT("The garden fell. Press Restart to try again.");
+	if (Power  <= 20.f) return TEXT("Power critical - spend actions sparingly and pass the sol.");
+	if (Oxygen <= 20.f) return TEXT("Oxygen low - electrolyze water, or grow lettuce under purple light.");
+	if (Food   <= 20.f) return TEXT("Food low - harvest a ready crop or plant fast lettuce.");
+	int32 Occ = 0, Ready = 0;
+	for (int32 i = 0; i < Beds.Num(); ++i) { if (Beds[i].bOccupied) ++Occ; if (IsBedReady(i)) ++Ready; }
+	if (Ready > 0) return TEXT("A crop is ready - harvest it before it spoils.");
+	if (Occ == 0)  return TEXT("Plant your first crop in a planter to start growing food.");
+	return Settings->Objective.ToString();
 }
 
 // ---------------- day resolution ----------------
@@ -204,16 +232,16 @@ void UGreenhouseSimSubsystem::AdvanceSol()
 		const float Step  = (1.f / FMath::Max(1.f, C.GrowSols)) * GMult * Match * FMath::Max(0.15f, Bed.Health);
 
 		Bed.Growth = FMath::Min(1.f, Bed.Growth + Step);
-		Accumulate(Oxygen,  C.O2Factor * Step * k * O2Mult);   // keeps producing O2 while alive
+		Accumulate(Oxygen,  C.O2Factor * Step * k * O2Mult);
 		Accumulate(Water,  -C.WaterUse * Step * k);
 
 		Bed.Health = FMath::Clamp(Bed.Health - S.HealthDecayPerSol, 0.f, 1.f);
-		if (Bed.Health <= 0.f) { Bed.bSpoiled = true; ++Spoiled; continue; } // died of neglect
+		if (Bed.Health <= 0.f) { Bed.bSpoiled = true; ++Spoiled; Log(FString::Printf(TEXT("Planter %d crop died of neglect."), i)); continue; }
 
 		if (Bed.Growth >= 1.f)
 		{
 			Bed.Overripe += 1.f;
-			if (Bed.Overripe > C.RipeWindowSols) { Bed.bSpoiled = true; ++Spoiled; } // bolted / rotted
+			if (Bed.Overripe > C.RipeWindowSols) { Bed.bSpoiled = true; ++Spoiled; Log(FString::Printf(TEXT("Planter %d crop spoiled (%s)."), i, *C.SpoilName.ToString())); }
 		}
 	}
 
@@ -221,11 +249,13 @@ void UGreenhouseSimSubsystem::AdvanceSol()
 
 	++Sol;
 	OnNewSol.Broadcast(Sol);
+	Log(FString::Printf(TEXT("Sol %d begins."), Sol));
 
-	if (Sol > S.TotalSols) { State = EGameState::Won; OnWin.Broadcast(); return; }
+	if (Sol > S.TotalSols) { State = EGameState::Won; Log(TEXT("All sols survived - Bustan endures.")); OnWin.Broadcast(); return; }
 
 	DustLevel = NextDust;
 	NextDust  = RollNewDust();
+	if (DustLevel > 0.f) Log(FString::Printf(TEXT("Dust storm - solar down %d%%."), FMath::RoundToInt(DustLevel*100.f)));
 	PickFunFact();
 
 	if (!TryTriggerEvent()) State = EGameState::Planning;
@@ -242,6 +272,7 @@ bool UGreenhouseSimSubsystem::CheckFailAndGrace()
 			if (ZeroSolCounter[i] > Settings->GraceSols)
 			{
 				State = EGameState::Lost;
+				Log(FString::Printf(TEXT("%s depleted - colony lost."), ResName(static_cast<EResource>(i))));
 				OnFail.Broadcast(static_cast<EResource>(i));
 				return true;
 			}
@@ -261,7 +292,8 @@ bool UGreenhouseSimSubsystem::TryTriggerEvent()
 		if (C.ScriptedSol == Sol && !FiredEvents.Contains(C.Id))
 		{
 			CurrentEvent = C; FiredEvents.Add(C.Id); bEventActive = true;
-			State = EGameState::Event; OnEventTriggered.Broadcast(CurrentEvent); return true;
+			State = EGameState::Event; Log(FString::Printf(TEXT("%s: decision required."), *C.Speaker.ToString()));
+			OnEventTriggered.Broadcast(CurrentEvent); return true;
 		}
 	}
 
@@ -277,7 +309,8 @@ bool UGreenhouseSimSubsystem::TryTriggerEvent()
 
 	CurrentEvent = Settings->Events[Eligible[FMath::RandRange(0, Eligible.Num() - 1)]];
 	FiredEvents.Add(CurrentEvent.Id); bEventActive = true;
-	State = EGameState::Event; OnEventTriggered.Broadcast(CurrentEvent);
+	State = EGameState::Event; Log(FString::Printf(TEXT("%s: decision required."), *CurrentEvent.Speaker.ToString()));
+	OnEventTriggered.Broadcast(CurrentEvent);
 	return true;
 }
 

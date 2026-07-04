@@ -1,4 +1,4 @@
-// GreenhouseLED.cpp
+// GreenhouseLED.cpp — the greenhouse grow-light. Glows PURPLE or WHITE to match the sim.
 #include "GreenhouseLED.h"
 #include "GreenhouseSimSubsystem.h"
 #include "MarsGreenhousePlayerController.h"
@@ -62,13 +62,9 @@ void AGreenhouseLED::Tick(float DeltaTime)
 	const UGreenhouseSimSubsystem* S = GetSim();
 	if (!S || !Light) return;
 
-	FLinearColor C;
-	switch (S->LedColor)
-	{
-		case ELedColor::Blue: C = FLinearColor(0.25f, 0.45f, 1.0f); break;
-		case ELedColor::Red:  C = FLinearColor(1.0f, 0.22f, 0.16f); break;
-		default:              C = FLinearColor(0.85f, 0.75f, 1.0f); break; // "blurple" balanced
-	}
+	const FLinearColor C = (S->LedColor == ELedColor::White)
+		? FLinearColor(1.0f, 0.98f, 0.94f)
+		: FLinearColor(0.62f, 0.28f, 0.98f); // purple "blurple"
 	Light->SetLightColor(C);
 	Light->SetIntensity(bHovered ? Intensity * 1.25f : Intensity);
 }

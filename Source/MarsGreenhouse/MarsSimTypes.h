@@ -1,6 +1,5 @@
-// MarsSimTypes.h — shared enums & structs for the Mars Greenhouse sim.
-// Turn-based narrative survival. 4 resources, 2 crops with real per-crop life-cycles,
-// a manual-harvest ripeness window, and spoilage (bolting / rot).
+// MarsSimTypes.h — shared enums & structs. Turn-based Arabic-flavored Mars survival ("Bustan").
+// 4 resources, 2 crops, one grow-light (Purple / White), manual harvest + spoilage, crew flavor.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -22,40 +21,36 @@ enum class ECropType : uint8
 	Lettuce UMETA(DisplayName="Lettuce")
 };
 
+// Grow-light. Purple = CEA "blurple" red+blue mix (more oxygen, steady growth).
+// White = full spectrum (faster growth, a little less oxygen).
 UENUM(BlueprintType)
 enum class ELedColor : uint8
 {
-	Blue     UMETA(DisplayName="Blue (more O2, slow)"),
-	Balanced UMETA(DisplayName="Balanced"),
-	Red      UMETA(DisplayName="Red (fast growth, less O2)")
+	Purple UMETA(DisplayName="Purple (efficient, more O2)"),
+	White  UMETA(DisplayName="White (fast growth, less O2)")
 };
 
 UENUM(BlueprintType)
 enum class EResource : uint8 { Oxygen, Water, Food, Power };
 
-// Static, data-driven stats for one crop.
 USTRUCT(BlueprintType)
 struct FCropStats
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) ECropType Type = ECropType::Potato;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float FoodYield = 60.f;  // food at a full, healthy harvest
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float O2Factor  = 1.0f;  // O2 produced per growth unit
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float WaterUse  = 1.0f;  // water consumed per growth unit
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float GrowSols  = 8.0f;  // turns from plant to maturity
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) ELedColor Prefers = ELedColor::Balanced;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float FoodYield = 60.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float O2Factor  = 1.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float WaterUse  = 1.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float GrowSols  = 8.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) ELedColor Prefers = ELedColor::Purple;
 
-	// Life-cycle: growth fraction (0..1) ending each named stage, and the stage labels.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<float> StageEnds;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<FText> StageNames;
-
-	// Harvest window: sols the crop can sit MATURE before it spoils; and the spoil label.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) float RipeWindowSols = 2.f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) FText SpoilName; // e.g. "Bolting" / "Rotting"
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) FText SpoilName;
 };
 
-// Runtime state for one greenhouse planter.
 USTRUCT(BlueprintType)
 struct FPlantedBed
 {
@@ -63,13 +58,21 @@ struct FPlantedBed
 
 	UPROPERTY(BlueprintReadOnly) bool      bOccupied = false;
 	UPROPERTY(BlueprintReadOnly) ECropType Crop      = ECropType::Potato;
-	UPROPERTY(BlueprintReadOnly) float     Growth    = 0.f;   // 0..1 (1 = mature/ready)
-	UPROPERTY(BlueprintReadOnly) float     Health    = 1.f;   // 0..1 (keep up by Watering; 0 = dies)
-	UPROPERTY(BlueprintReadOnly) float     Overripe  = 0.f;   // sols spent mature-but-unharvested
-	UPROPERTY(BlueprintReadOnly) bool      bSpoiled  = false; // bolted / rotted; must be cleared, 0 yield
+	UPROPERTY(BlueprintReadOnly) float     Growth    = 0.f;
+	UPROPERTY(BlueprintReadOnly) float     Health    = 1.f;
+	UPROPERTY(BlueprintReadOnly) float     Overripe  = 0.f;
+	UPROPERTY(BlueprintReadOnly) bool      bSpoiled  = false;
 };
 
-// Which display stage a crop is in for a given growth (index into StageNames/StageMeshes).
+// One crew member (flavor roster - no gameplay effect).
+USTRUCT(BlueprintType)
+struct FCrewMember
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) FText Name;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) FText Role;
+};
+
 FORCEINLINE int32 CropStageIndex(const TArray<float>& Ends, float Growth)
 {
 	for (int32 i = 0; i < Ends.Num(); ++i)

@@ -5,6 +5,7 @@
 #include "MarsSimSettings.h"
 #include "EventPopupWidget.h"
 #include "GreenhouseCamera.h"
+#include "Camera/CameraComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/InputComponent.h"
@@ -101,6 +102,10 @@ void AMarsGreenhousePlayerController::PlayerTick(float DeltaTime)
 	const FRotator Target(-ny * Cam->PanPitchLimit, nx * Cam->PanYawLimit, 0.f);
 	CamPanOffset = FMath::RInterpTo(CamPanOffset, Target, DeltaTime, 6.f);
 	Cam->SetActorRotation(CamBaseRot + CamPanOffset);
+
+	// very slight cinematic zoom breathing
+	if (Cam->GetCameraComponent())
+		Cam->GetCameraComponent()->SetFieldOfView(Cam->CameraFov + FMath::Sin(GetWorld()->GetTimeSeconds() * 0.4f) * 1.2f);
 }
 
 // ---------------- camera (click only) ----------------
@@ -189,9 +194,8 @@ void AMarsGreenhousePlayerController::HandleHudAction(FName Action)
 	else if (A == TEXT("restart"))       { S->RestartRun();    PlaySfx(SfxClick); }
 	else if (A == TEXT("nextbed"))       { const int32 N = S->Beds.Num(); if (N > 0) SelectedBed = (SelectedBed + 1) % N; PlaySfx(SfxClick); }
 	else if (A.StartsWith(TEXT("bed")))  { const int32 i = FCString::Atoi(*A.Mid(3)); if (S->Beds.IsValidIndex(i)) SelectedBed = i; PlaySfx(SfxClick); }
-	else if (A == TEXT("led_blue"))      { S->SetLed(ELedColor::Blue);     PlaySfx(SfxClick); }
-	else if (A == TEXT("led_balanced"))  { S->SetLed(ELedColor::Balanced); PlaySfx(SfxClick); }
-	else if (A == TEXT("led_red"))       { S->SetLed(ELedColor::Red);      PlaySfx(SfxClick); }
+	else if (A == TEXT("led_purple"))    { S->SetLed(ELedColor::Purple);   PlaySfx(SfxClick); }
+	else if (A == TEXT("led_white"))     { S->SetLed(ELedColor::White);    PlaySfx(SfxClick); }
 	else if (A == TEXT("led_cycle"))     { S->CycleLed();                  PlaySfx(SfxClick); }
 	else if (A == TEXT("act_water"))     { S->WaterPlant(SelectedBed);     PlaySfx(SfxConfirm); }
 	else if (A == TEXT("act_ice"))       { S->MineIce();                   PlaySfx(SfxConfirm); }
@@ -211,10 +215,10 @@ FString AMarsGreenhousePlayerController::TutorialPrompt() const
 {
 	switch (TutorialStep)
 	{
-		case 0: return TEXT("Welcome, Commander. Keep your crew alive for 15 sols on Mars.  (Click NEXT)");
+		case 0: return TEXT("Welcome to Bustan, Commander. Keep your crew alive for 15 sols on Mars.  (Click NEXT)");
 		case 1: return TEXT("These 4 bars are life support - Oxygen, Water, Food, Power. If any hits zero, the colony dies. Power runs everything.  (Click NEXT)");
 		case 2: return TEXT("Click a PLANTER (in the world or the list), then PLANT a crop: Potato (food) or Lettuce (fast, oxygen).");
-		case 3: return TEXT("Set the GROW-LIGHT: Blue = more oxygen, Red = faster growth. Match it to your crop (potato likes red, lettuce likes blue).");
+		case 3: return TEXT("Set the GROW-LIGHT: Purple = more oxygen, White = faster growth. Match it to your crop (potato likes white, lettuce likes purple).");
 		case 4: return TEXT("Keep plants healthy - WATER them or they die. When a crop is READY, HARVEST it before it spoils. Short on a resource? Mine Ice or Electrolyze - both cost POWER.");
 		case 5: return TEXT("Click END DAY to advance a sol. Story beats and crises will interrupt with a choice. Survive 15 sols. Good luck.");
 		default: return FString();
