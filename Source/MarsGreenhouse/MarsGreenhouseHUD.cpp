@@ -54,7 +54,7 @@ void AMarsGreenhouseHUD::DrawHUD()
 	// ============================================================================
 	//  MASTER TEXT SIZE.  Bump FS to scale the WHOLE HUD at once.
 	// ============================================================================
-	const float FS  = 1.8f;
+	const float FS  = 1.3f;
 	const float CAP = 1.02f*FS;
 	const float SUB = 1.20f*FS;
 	const float LBL = 1.40f*FS;
@@ -289,6 +289,7 @@ void AMarsGreenhouseHUD::DrawHUD()
 			}
 		}
 
+#if 0 // grow-light WORLD highlighters disabled - controlled from the HUD grow-light toggle only
 		TArray<AActor*> LedActors;
 		UGameplayStatics::GetAllActorsOfClass(this, AGreenhouseLED::StaticClass(), LedActors);
 		for (AActor* A : LedActors)
@@ -306,6 +307,8 @@ void AMarsGreenhouseHUD::DrawHUD()
 				break;
 			}
 		}
+#endif
+
 	}
 
 	if (!bCustomDash)
@@ -327,7 +330,7 @@ void AMarsGreenhouseHUD::DrawHUD()
 				const bool low = Val <= 15.f;
 				ResIcon(i, cx + 36.f, py + pillH*0.5f, 20.f, RC[i]);
 				DrawText(RN[i], Sec, cx + 62.f, py + 11.f, Font, CAP);
-				DrawText(FString::Printf(TEXT("%d%%"), FMath::RoundToInt(DispVal[i])), low ? Red : Prim, cx + cellW - 82.f, py + 9.f, Font, VAL);
+				DrawText(FString::Printf(TEXT("%d%%"), FMath::RoundToInt(DispVal[i])), low ? Red : Prim, cx + cellW - 78.f, py + 11.f, Font, LBL);
 				SegMeter(cx + 62.f, py + 42.f, cellW - 86.f, 12.f, DispVal[i]*0.01f, low ? Red : RC[i]);
 				if (i < 3) DrawRect(Divide, cx + cellW - 1.f, py + 14.f, 1.f, pillH - 28.f);
 			}

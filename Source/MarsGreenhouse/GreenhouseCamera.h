@@ -23,7 +23,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Camera")
 	FString CameraLabel = TEXT("CAM");
 
-	/** Room/category grouping. */
+	/** Room/category grouping. Also used to filter which world interactables (planters, LEDs)
+	 *  are clickable while this camera is active — tag those actors with this same string. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Camera")
 	FString RoomLabel = TEXT("Greenhouse");
 
@@ -48,4 +49,11 @@ public:
 	UPROPERTY(EditAnywhere, Category="Camera|Preview")
 	int32 PreviewHeight = 180;
 
-	UTextu
+	UTextureRenderTarget2D* GetPreviewRT() const { return PreviewRT; }
+
+protected:
+	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere, Category="Camera") TObjectPtr<USceneCaptureComponent2D> Capture;
+	UPROPERTY() TObjectPtr<UTextureRenderTarget2D> PreviewRT;
+};
