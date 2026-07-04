@@ -52,25 +52,25 @@ void AMarsGreenhouseHUD::DrawHUD()
 	const float pulse = 0.5f + 0.5f * FMath::Sin(Now * 3.5f);
 	const float CAP = 0.82f, SUB = 0.92f, LBL = 1.14f, VAL = 1.5f, BIG = 2.0f;
 
-	// warm Mars palette
-	const FLinearColor Prim  (0.95f, 0.92f, 0.87f);
-	const FLinearColor Sec   (0.68f, 0.62f, 0.55f);
-	const FLinearColor Muted (0.46f, 0.42f, 0.37f);
-	const FLinearColor O2C   (0.30f, 0.82f, 0.78f);
-	const FLinearColor H2OC  (0.36f, 0.62f, 0.92f);
-	const FLinearColor FoodC (0.52f, 0.80f, 0.46f);
-	const FLinearColor PwrC  (0.96f, 0.66f, 0.30f);
-	const FLinearColor Accent(0.96f, 0.62f, 0.26f);
-	const FLinearColor AccTxt(0.15f, 0.09f, 0.02f);
-	const FLinearColor Red   (0.91f, 0.37f, 0.33f);
-	const FLinearColor Green (0.52f, 0.80f, 0.46f);
-	const FLinearColor Amber (0.96f, 0.72f, 0.32f);
-	const FLinearColor PurpleC(0.62f, 0.35f, 0.95f);
-	const FLinearColor WhiteC (0.98f, 0.96f, 0.92f);
-	const FLinearColor CardBg(0.085f, 0.06f, 0.045f, 0.965f);
-	const FLinearColor CardHi(0.13f, 0.09f, 0.06f, 0.98f);
-	const FLinearColor IconBg(0.09f, 0.06f, 0.045f, 1.f);
-	const FLinearColor Border(1.0f, 0.82f, 0.55f, 0.16f);
+	// modern cool-graphite palette (cyan accent)
+	const FLinearColor Prim  (0.93f, 0.95f, 0.98f);
+	const FLinearColor Sec   (0.60f, 0.66f, 0.75f);
+	const FLinearColor Muted (0.42f, 0.47f, 0.56f);
+	const FLinearColor O2C   (0.32f, 0.83f, 0.80f);
+	const FLinearColor H2OC  (0.38f, 0.63f, 0.96f);
+	const FLinearColor FoodC (0.50f, 0.82f, 0.52f);
+	const FLinearColor PwrC  (0.97f, 0.68f, 0.34f);
+	const FLinearColor Accent(0.28f, 0.80f, 0.88f);   // modern cyan
+	const FLinearColor AccTxt(0.02f, 0.10f, 0.12f);
+	const FLinearColor Red   (0.95f, 0.44f, 0.44f);
+	const FLinearColor Green (0.44f, 0.85f, 0.56f);
+	const FLinearColor Amber (0.45f, 0.80f, 0.92f);   // cool label/accent (headers, growing state)
+	const FLinearColor PurpleC(0.64f, 0.46f, 0.98f);
+	const FLinearColor WhiteC (0.96f, 0.97f, 1.00f);
+	const FLinearColor CardBg(0.055f, 0.065f, 0.090f, 0.972f);   // cool slate
+	const FLinearColor CardHi(0.095f, 0.11f, 0.145f, 0.982f);
+	const FLinearColor IconBg(0.06f, 0.07f, 0.095f, 1.f);
+	const FLinearColor Border(0.55f, 0.68f, 0.92f, 0.15f);
 	const FLinearColor BarBg (1.f, 1.f, 1.f, 0.08f);
 
 	float mx = -1.f, my = -1.f;
@@ -472,7 +472,7 @@ void AMarsGreenhouseHUD::DrawHUD()
 	{
 		const float bw = 780.f, bx = SW*0.5f - bw*0.5f, by = SH*0.5f - 40.f, bh = 66.f;
 		Card(bx, by, bw, bh, FLinearColor(0.10f,0.07f,0.05f,0.98f));
-		DrawRect(FLinearColor(0.96f,0.55f,0.20f, 0.5f+0.4f*pulse), bx + 12.f, by + 10.f, 4.f, bh - 20.f);
+		DrawRect(FLinearColor(Accent.R, Accent.G, Accent.B, 0.5f+0.4f*pulse), bx + 12.f, by + 10.f, 4.f, bh - 20.f);
 		DrawText(FString::Printf(TEXT("TUTORIAL  %d/6"), TStep + 1), Amber, bx + 24.f, by + 8.f, Font, CAP);
 		DrawWrapped(PC->TutorialPrompt(), Prim, bx + 24.f, by + 26.f, bw - 220.f, SUB);
 		Button(bx + bw - 92.f, by + bh - 30.f, 82.f, 24.f, TEXT("Skip"), FString(), FLinearColor(0.30f,0.12f,0.10f,0.98f), Prim, FName("tut_skip"), true, FString());
@@ -494,7 +494,7 @@ void AMarsGreenhouseHUD::DrawHUD()
 	if (HoverTime > 0.6f && !FrameTip.IsEmpty() && mx > 0.f)
 	{
 		const float tw = 280.f, tx = FMath::Min(mx + 16.f, SW - tw - 8.f), ty = my + 18.f;
-		Card(tx, ty, tw, 46.f, FLinearColor(0.05f,0.04f,0.03f,0.99f));
+		Card(tx, ty, tw, 46.f, FLinearColor(0.05f,0.055f,0.075f,0.99f));
 		DrawWrapped(FrameTip, Prim, tx + 10.f, ty + 8.f, tw - 20.f, CAP);
 	}
 }
